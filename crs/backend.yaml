@@ -1,0 +1,11 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: ApplicationRepository
+metadata:
+  name: backend
+spec:
+  repoURL: https://github.com/entr0pian/backend.git
+  targetRevision: main
+  chartPath: chart
+  clusters:
+    - name: dev
+      namespace: default
