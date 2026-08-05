@@ -26,6 +26,11 @@ spec:
   clusters:
     - name: dev
       namespace: default
+      imageTag: <sha>   # optional; omit to use the chart's own default tag
 ```
+
+Clearing a previously-set `imageTag` (removing it or leaving it blank) reverts
+that cluster to the chart's own default tag — it does not leave the last
+value in place.
 
 No Helm chart, no templating — these are plain manifests applied via an Argo CD `directory` source, since each file only ever needs to describe one CR with no shared values to substitute.
