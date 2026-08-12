@@ -1,36 +1,34 @@
 # application-repositories
 
-Source-of-truth repo for `ApplicationRepository` custom resources — the onboarding mechanism for automated multi-cluster Argo CD delivery. A dev lead opens a PR here with a small CR instead of the platform team hand-writing an Argo CD `Application` per repo per cluster.
+Source-of-truth repo for onboarding services into automated multi-cluster Argo CD delivery. A dev lead opens a PR here with one small file instead of the platform team hand-writing an Argo CD `Application` per repo per cluster.
 
-CRs committed here are synced by Argo CD into the management cluster, where the [`application-repository-operator`](https://github.com/entr0pian/application-repository-operator) reconciles them and writes the generated deployment config into [`argocd`](https://github.com/entr0pian/argocd).
+A `taskapp-catalog` `ApplicationSet` in [`argocd`](https://github.com/entr0pian/argocd) reads `catalog/<service>/<env>.yaml` files here directly — no CR, no operator, no write-back commit into another repo.
 
 ## Layout
 
 ```
-crs/
-└── <repo-name>.yaml   # one ApplicationRepository CR per onboarded repo
+catalog/
+└── <service>/
+    └── <env>.yaml   # one file per service per environment
 ```
 
-To onboard a new repo, open a PR adding `crs/<repo-name>.yaml`:
+`<service>` and `<env>` come from the path itself, not from fields inside the file:
 
 ```yaml
-apiVersion: platform.taskapp.io/v1alpha1
-kind: ApplicationRepository
-metadata:
-  name: <repo-name>
-  namespace: default
-spec:
-  repoURL: https://github.com/entr0pian/<repo-name>.git
-  targetRevision: main
-  chartPath: chart
-  clusters:
-    - name: dev
-      namespace: default
-      imageTag: <sha>   # optional; omit to use the chart's own default tag
+# catalog/backend/dev.yaml
+repoURL: https://github.com/entr0pian/backend.git
+targetRevision: main
+chartPath: chart
+namespace: default
+imageTag: "f84c7a80d3ac917285f7184a42e313fd357f8ee9"
 ```
 
-Clearing a previously-set `imageTag` (removing it or leaving it blank) reverts
-that cluster to the chart's own default tag — it does not leave the last
-value in place.
+No cluster URL here — the ApplicationSet resolves `dev`/`prod` to a real cluster by matching the `environment` label on ArgoCD's own registered clusters, so this file never needs to know what the current cluster URL happens to be.
 
-No Helm chart, no templating — these are plain manifests applied via an Argo CD `directory` source, since each file only ever needs to describe one CR with no shared values to substitute.
+To onboard a new service+environment, open a PR adding one file shaped like the one above.
+
+No Helm chart, no templating — these are plain manifests read directly by the ApplicationSet's git-files generator, since each file only ever needs to describe one service+environment with no shared values to substitute.
+
+## History
+
+This repo previously used `crs/` — `ApplicationRepository` custom resources reconciled by [`application-repository-operator`](https://github.com/entr0pian/application-repository-operator), which wrote generated deployment config back into `argocd`. That path has been retired: the operator's Argo CD Application was removed, and `crs/` was deleted. The operator's own repo still exists but is no longer deployed anywhere in this stack.
