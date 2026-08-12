@@ -1,3 +1,4 @@
+name: backend-dev
 repoURL: https://github.com/entr0pian/backend.git
 targetRevision: main
 chartPath: chart

@@ -1,3 +1,4 @@
+name: kube-prometheus-stack-dev
 repoURL: https://prometheus-community.github.io/helm-charts
 chart: kube-prometheus-stack
 chartPath: ""

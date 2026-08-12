@@ -1,3 +1,4 @@
+name: atlas-operator-dev
 repoURL: ghcr.io/ariga/charts
 chart: atlas-operator
 chartPath: ""

@@ -1,2 +1,3 @@
+name: external-secrets-management
 values: |
   installCRDs: true

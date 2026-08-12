@@ -1,3 +1,4 @@
+name: crossplane-provider-config-management
 values: |
   kubernetes:
     enabled: false

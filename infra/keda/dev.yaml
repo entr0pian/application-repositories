@@ -1,3 +1,4 @@
+name: keda-dev
 repoURL: https://kedacore.github.io/charts
 chart: keda
 chartPath: ""

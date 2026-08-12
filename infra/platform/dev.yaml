@@ -1,3 +1,4 @@
+name: platform-dev
 repoURL: https://github.com/entr0pian/helm-charts.git
 chart: ""
 chartPath: platform

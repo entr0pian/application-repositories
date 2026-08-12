@@ -1,3 +1,4 @@
+name: kube-prometheus-stack-dev
 values: |
   crds:
     enabled: true

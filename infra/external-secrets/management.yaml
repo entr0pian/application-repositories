@@ -1,3 +1,4 @@
+name: external-secrets-management
 repoURL: https://charts.external-secrets.io
 chart: external-secrets
 chartPath: ""

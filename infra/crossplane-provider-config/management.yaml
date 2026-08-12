@@ -1,3 +1,4 @@
+name: crossplane-provider-config-management
 repoURL: https://github.com/entr0pian/helm-charts.git
 chart: ""
 chartPath: crossplane-provider-config

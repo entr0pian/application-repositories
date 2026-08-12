@@ -1,3 +1,4 @@
+name: platform-dev
 values: |
   limitRange:
     enabled: true
