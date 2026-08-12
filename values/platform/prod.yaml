@@ -1,0 +1,13 @@
+values: |
+  limitRange:
+    enabled: true
+  prometheusRules:
+    enabled: true
+  grafanaDashboard:
+    enabled: true
+  crossplane:
+    secretPath: ""
+  argocdWriteToken:
+    secretPath: ""
+  crossplaneGithub:
+    secretPath: ""

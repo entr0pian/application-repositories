@@ -1,0 +1,7 @@
+values: |
+  kubernetes:
+    enabled: false
+  aws:
+    enabled: false
+  github:
+    enabled: true

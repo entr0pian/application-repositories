@@ -7,5 +7,4 @@ createNamespace: true
 serverSideApply: false
 wave: "0"
 notify: false
-values: |
-  installCRDs: true
+values: ""

@@ -7,16 +7,4 @@ createNamespace: false
 serverSideApply: false
 wave: "1"
 notify: true
-values: |
-  limitRange:
-    enabled: true
-  prometheusRules:
-    enabled: true
-  grafanaDashboard:
-    enabled: true
-  crossplane:
-    secretPath: ""
-  argocdWriteToken:
-    secretPath: ""
-  crossplaneGithub:
-    secretPath: ""
+values: ""

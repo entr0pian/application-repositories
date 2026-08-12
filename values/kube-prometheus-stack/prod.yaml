@@ -1,0 +1,11 @@
+values: |
+  crds:
+    enabled: true
+  defaultRules:
+    rules:
+      etcd: false
+      kubeControllerManager: false
+      kubeProxy: false
+      kubeSchedulerAlerting: false
+      kubeSchedulerRecording: false
+      windows: false

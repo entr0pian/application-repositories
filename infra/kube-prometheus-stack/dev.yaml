@@ -7,14 +7,4 @@ createNamespace: true
 serverSideApply: true
 wave: "0"
 notify: false
-values: |
-  crds:
-    enabled: true
-  defaultRules:
-    rules:
-      etcd: false
-      kubeControllerManager: false
-      kubeProxy: false
-      kubeSchedulerAlerting: false
-      kubeSchedulerRecording: false
-      windows: false
+values: ""

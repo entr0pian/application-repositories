@@ -1,13 +1,13 @@
 # application-repositories
 
-Source-of-truth repo for onboarding both services and cluster infrastructure into automated multi-cluster Argo CD delivery. A PR here — one small file — is the entire onboarding step; nothing needs to change in [`argocd`](https://github.com/entr0pian/argocd) itself.
+Source-of-truth repo for onboarding both services and cluster infrastructure into automated multi-cluster Argo CD delivery. A PR here — one or two small files — is the entire onboarding step; nothing needs to change in [`argocd`](https://github.com/entr0pian/argocd) itself.
 
 Two structurally identical ApplicationSets there read directly from this repo:
 
 - **`taskapp-catalog`** reads `catalog/<service>/<env>.yaml` — services (`backend`, `frontend`, ...).
 - **`taskapp-infra`** reads `infra/<component>/<env>.yaml` — cluster infrastructure (`kube-prometheus-stack`, `platform`, `crossplane`, ...).
 
-One file per service/component per environment, everything inline — no separate values tree for either. A `catalog/`+`values/` split was tried (the idea: scope a CI bot's write access to `values/` alone, away from `repoURL`/`chartPath`, via CODEOWNERS/branch protection) and reverted — nothing currently writes to either tree automatically. The old write-back path was retired along with `taskapp-argocd`'s `repositories-app.yaml`, and CI hasn't been repointed to write anywhere new yet (see "Not onboarded here" below). Building that boundary before its writer exists was speculative structure with no real benefit — worth re-introducing exactly when a high-frequency automated writer actually shows up, not before.
+Both merge their identity file against a paired **`values/<name>/<env>.yaml`** — kept separate on purpose: `catalog/`/`infra/` are onboarding-time facts that rarely change and deserve human review (repo, chart path, namespace); `values/` is what changes on every deploy (image tags, toggles) and is the natural place to eventually scope a CI bot's write access via CODEOWNERS/branch protection, without that bot ever being able to touch where a chart lives.
 
 No CR, no operator, no write-back commit into another repo, ever. `<name>` and `<env>` always come from the file's own path, never from fields inside it. No cluster URL ever appears here either — both ApplicationSets resolve it live from ArgoCD's own registered clusters.
 
@@ -19,9 +19,7 @@ repoURL: https://github.com/entr0pian/backend.git
 targetRevision: main
 chartPath: chart
 namespace: default
-values: |
-  image:
-    tag: "f84c7a80d3ac917285f7184a42e313fd357f8ee9"
+values: ""
 ```
 
 | Field | Purpose |
@@ -29,7 +27,14 @@ values: |
 | `repoURL` / `targetRevision` | The service's own repo and ref |
 | `chartPath` | Where the chart lives inside that repo |
 | `namespace` | Destination namespace |
-| `values` | Raw Helm values YAML, inline — `""` if the chart's own defaults are fine |
+| `values` | Always `""` here — real overrides go in the paired `values/` file below |
+
+```yaml
+# values/backend/dev.yaml  (optional — omit if the chart's own defaults are fine)
+values: |
+  image:
+    tag: "f84c7a80d3ac917285f7184a42e313fd357f8ee9"
+```
 
 ## infra/ — cluster infrastructure
 
@@ -44,6 +49,22 @@ createNamespace: false
 serverSideApply: false
 wave: "1"
 notify: true
+values: ""
+```
+
+| Field | Purpose |
+|---|---|
+| `repoURL` / `targetRevision` | Chart source |
+| `chart` | Chart name — set this **or** `chartPath`, leave the other `""`. Use `chart` when `repoURL` is a Helm chart repository (e.g. `https://charts.crossplane.io/stable`) |
+| `chartPath` | Path to the chart inside a git repo — use instead of `chart` when `repoURL` is a git repo (e.g. `helm-charts.git`) |
+| `namespace` | Destination namespace |
+| `createNamespace` / `serverSideApply` | Booleans → `CreateNamespace=`/`ServerSideApply=` sync options |
+| `wave` | Sync-wave string, e.g. `"0"`, `"1"`, `"2"` |
+| `notify` | Boolean — subscribe this Application to the `#deployments` Slack channel on sync succeeded/failed |
+| `values` | Always `""` here — real overrides go in the paired `values/` file |
+
+```yaml
+# values/platform/dev.yaml
 values: |
   limitRange:
     enabled: true
@@ -59,23 +80,12 @@ values: |
     secretPath: ""
 ```
 
-| Field | Purpose |
-|---|---|
-| `repoURL` / `targetRevision` | Chart source |
-| `chart` | Chart name — set this **or** `chartPath`, leave the other `""`. Use `chart` when `repoURL` is a Helm chart repository (e.g. `https://charts.crossplane.io/stable`) |
-| `chartPath` | Path to the chart inside a git repo — use instead of `chart` when `repoURL` is a git repo (e.g. `helm-charts.git`) |
-| `namespace` | Destination namespace |
-| `createNamespace` / `serverSideApply` | Booleans → `CreateNamespace=`/`ServerSideApply=` sync options |
-| `wave` | Sync-wave string, e.g. `"0"`, `"1"`, `"2"` |
-| `notify` | Boolean — subscribe this Application to the `#deployments` Slack channel on sync succeeded/failed |
-| `values` | Raw Helm values YAML, inline — `""` if the chart's own defaults are fine |
-
-**Not onboarded here:** `crossplane-compositions-package` (an OCI `Configuration` CR, not a Helm chart at all) stays a hand-written Application template directly in `argocd` — confirmed structurally incompatible with the shared template above (`source.helm` and `source.directory` are both structs; unlike scalar fields, an unused one doesn't cleanly disappear from the rendered Application, so they can't safely coexist in one generic template). `backend-operator` isn't currently deployed anywhere (`operator.enabled` was `false` in every environment before this repo existed) — add `infra/backend-operator/<env>.yaml` the same way as `platform` above whenever it's actually needed. `backend`'s (and eventually `frontend`'s) CI still needs repointing to bump `catalog/<service>/<env>.yaml`'s `values.image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet.
+**Not onboarded here:** `crossplane-compositions-package` (an OCI `Configuration` CR, not a Helm chart at all) stays a hand-written Application template directly in `argocd` — confirmed structurally incompatible with the shared template above (`source.helm` and `source.directory` are both structs; unlike scalar fields, an unused one doesn't cleanly disappear from the rendered Application, so they can't safely coexist in one generic template). `backend-operator` isn't currently deployed anywhere (`operator.enabled` was `false` in every environment before this repo existed) — add `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above whenever it's actually needed. `backend`'s (and eventually `frontend`'s) CI still needs repointing to write `values/<service>/<env>.yaml`'s `values.image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet. Until that lands, `values/` is edited by hand like everything else here — the separation is still worth having ahead of that wiring.
 
 ## To onboard
 
-Add one file — `catalog/<service>/<env>.yaml` for a service, `infra/<component>/<env>.yaml` for infrastructure. Nothing to pair.
+Add one file — `catalog/<service>/<env>.yaml` for a service, `infra/<component>/<env>.yaml` for infrastructure — plus a paired `values/<name>/<env>.yaml` if it needs anything beyond the chart's own defaults.
 
 ## History
 
-This repo previously used `crs/` — `ApplicationRepository` custom resources reconciled by [`application-repository-operator`](https://github.com/entr0pian/application-repository-operator), which wrote generated deployment config back into `argocd`. That path has been retired: the operator's Argo CD Application was removed, and `crs/` was deleted. The operator's own repo still exists but is no longer deployed anywhere in this stack. Both `catalog/` and `infra/` briefly had a paired `values/` tree (split out for CI-write-scoping reasons) — folded back into one file each once it became clear nothing writes to either automatically yet, so the split had no real benefit to earn its keep against. Revisit per-tree, not globally, whenever an actual high-frequency writer shows up.
+This repo previously used `crs/` — `ApplicationRepository` custom resources reconciled by [`application-repository-operator`](https://github.com/entr0pian/application-repository-operator), which wrote generated deployment config back into `argocd`. That path has been retired: the operator's Argo CD Application was removed, and `crs/` was deleted. The operator's own repo still exists but is no longer deployed anywhere in this stack. The `values/` split was briefly folded away (the reasoning: nothing writes to it automatically yet, so it wasn't earning its keep) and then restored — identity and parameters are a real separation of concerns worth keeping even before an automated writer exists for `values/`.
