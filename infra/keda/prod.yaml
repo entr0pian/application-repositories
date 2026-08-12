@@ -1,0 +1,10 @@
+repoURL: https://kedacore.github.io/charts
+chart: keda
+chartPath: ""
+targetRevision: "2.16.1"
+namespace: keda
+createNamespace: true
+serverSideApply: true
+wave: "0"
+notify: false
+values: ""

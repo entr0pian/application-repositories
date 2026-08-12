@@ -1,0 +1,20 @@
+repoURL: https://prometheus-community.github.io/helm-charts
+chart: kube-prometheus-stack
+chartPath: ""
+targetRevision: "84.4.0"
+namespace: monitoring
+createNamespace: true
+serverSideApply: true
+wave: "0"
+notify: false
+values: |
+  crds:
+    enabled: true
+  defaultRules:
+    rules:
+      etcd: false
+      kubeControllerManager: false
+      kubeProxy: false
+      kubeSchedulerAlerting: false
+      kubeSchedulerRecording: false
+      windows: false

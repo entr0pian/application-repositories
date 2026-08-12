@@ -1,0 +1,22 @@
+repoURL: https://github.com/entr0pian/helm-charts.git
+chart: ""
+chartPath: platform
+targetRevision: main
+namespace: default
+createNamespace: false
+serverSideApply: false
+wave: "1"
+notify: true
+values: |
+  limitRange:
+    enabled: true
+  prometheusRules:
+    enabled: true
+  grafanaDashboard:
+    enabled: true
+  crossplane:
+    secretPath: ""
+  argocdWriteToken:
+    secretPath: ""
+  crossplaneGithub:
+    secretPath: ""

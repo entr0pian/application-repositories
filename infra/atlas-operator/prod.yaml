@@ -1,0 +1,10 @@
+repoURL: ghcr.io/ariga/charts
+chart: atlas-operator
+chartPath: ""
+targetRevision: "0.7.36"
+namespace: atlas-operator
+createNamespace: true
+serverSideApply: true
+wave: "1"
+notify: true
+values: ""

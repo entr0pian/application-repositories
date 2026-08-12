@@ -1,0 +1,11 @@
+repoURL: https://charts.external-secrets.io
+chart: external-secrets
+chartPath: ""
+targetRevision: "0.14.4"
+namespace: external-secrets
+createNamespace: true
+serverSideApply: false
+wave: "0"
+notify: false
+values: |
+  installCRDs: true

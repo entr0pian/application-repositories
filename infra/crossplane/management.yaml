@@ -1,0 +1,10 @@
+repoURL: https://charts.crossplane.io/stable
+chart: crossplane
+chartPath: ""
+targetRevision: "2.3.4"
+namespace: crossplane-system
+createNamespace: true
+serverSideApply: true
+wave: "0"
+notify: false
+values: ""
