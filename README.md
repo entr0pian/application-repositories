@@ -2,12 +2,13 @@
 
 Source-of-truth repo for onboarding both services and cluster infrastructure into automated multi-cluster Argo CD delivery. A PR here — one or two small files — is the entire onboarding step; nothing needs to change in [`argocd`](https://github.com/entr0pian/argocd) itself.
 
-Two structurally identical ApplicationSets there read directly from this repo:
+Three structurally similar ApplicationSets there read directly from this repo:
 
 - **`taskapp-catalog`** reads `catalog/<service>/<env>.yaml` — services (`backend`, `frontend`, ...).
 - **`taskapp-infra`** reads `infra/<component>/<env>.yaml` — cluster infrastructure (`kube-prometheus-stack`, `platform`, `crossplane`, ...).
+- **`taskapp-packages`** reads `packages/<package>/<env>.yaml` — versioned Crossplane platform API packages (`crossplane-compositions`, ...).
 
-Both merge their identity file against a paired **`values/<name>/<env>.yaml`** — kept separate on purpose: `catalog/`/`infra/` are onboarding-time facts that rarely change and deserve human review (repo, chart path, namespace); `values/` is what changes on every deploy (image tags, toggles) and is the natural place to eventually scope a CI bot's write access via CODEOWNERS/branch protection, without that bot ever being able to touch where a chart lives.
+`catalog/`/`infra/` merge their identity file against a paired **`values/<name>/<env>.yaml`** — kept separate on purpose: `catalog/`/`infra/` are onboarding-time facts that rarely change and deserve human review (repo, chart path, namespace); `values/` is what changes on every deploy (image tags, toggles) and is the natural place to eventually scope a CI bot's write access via CODEOWNERS/branch protection, without that bot ever being able to touch where a chart lives. `packages/` doesn't follow this split — see its own section below for why.
 
 No CR, no operator, no write-back commit into another repo, ever. `<name>` and `<env>` always come from the file's own path, never from fields inside it. No cluster URL ever appears here either — both ApplicationSets resolve it live from ArgoCD's own registered clusters.
 
@@ -80,11 +81,50 @@ values: |
     secretPath: ""
 ```
 
-**Not onboarded here:** `crossplane-compositions-package` (an OCI `Configuration` CR, not a Helm chart at all) stays a hand-written Application template directly in `argocd` — confirmed structurally incompatible with the shared template above (`source.helm` and `source.directory` are both structs; unlike scalar fields, an unused one doesn't cleanly disappear from the rendered Application, so they can't safely coexist in one generic template). `backend-operator` isn't currently deployed anywhere (`operator.enabled` was `false` in every environment before this repo existed) — add `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above whenever it's actually needed. `backend`'s (and eventually `frontend`'s) CI still needs repointing to write `values/<service>/<env>.yaml`'s `values.image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet. Until that lands, `values/` is edited by hand like everything else here — the separation is still worth having ahead of that wiring.
+## packages/ — versioned platform API packages
+
+```yaml
+# packages/crossplane-compositions/management.yaml
+name: crossplane-compositions-management
+environment: management
+
+source:
+  repoURL: https://github.com/entr0pian/crossplane-compositions.git
+  targetRevision: main
+  path: charts/configuration-installer
+
+package:
+  repository: ghcr.io/entr0pian/crossplane-compositions
+  version: v0.1.0
+
+values:
+  pullPolicy: IfNotPresent
+```
+
+| Field | Purpose |
+|---|---|
+| `environment` | Used by `taskapp-packages`' cluster selector, same as every other ApplicationSet here |
+| `source.repoURL` / `source.targetRevision` / `source.path` | Where the installer Helm chart (`charts/configuration-installer` in the package's own repo) comes from — independent of the package version below |
+| `package.repository` / `package.version` | Which immutable OCI `Configuration` artifact gets installed. `version` must always be an explicit release tag (e.g. `v0.4.1`) — never `latest`/`main`/`master` |
+| `values` | Passed straight through to the installer chart (currently just `pullPolicy`) |
+
+Unlike `catalog/`/`infra/`, this is a single file per package/environment — no paired
+`values/` file. For those, identity rarely changes and values change on every deploy, so
+splitting them keeps a CI bot's write access scopeable. For a package, `package.version`
+— the one field that changes on every promotion — *is* the deployed identity; there's no
+separate "identity" half to split it from. Promoting a package from dev to prod is a PR
+that changes exactly this file's `package.version`. Publishing a new OCI version to GHCR
+never deploys it anywhere by itself — only editing this file does.
+
+Adding a new package (e.g. a future `platform-rds`) is just a new
+`packages/<package>/<env>.yaml` file here — `argocd`'s `taskapp-packages` ApplicationSet
+is generic over the contract above and needs no changes.
+
+**Not onboarded here:** `backend-operator` isn't currently deployed anywhere (`operator.enabled` was `false` in every environment before this repo existed) — add `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above whenever it's actually needed. `backend`'s (and eventually `frontend`'s) CI still needs repointing to write `values/<service>/<env>.yaml`'s `values.image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet. Until that lands, `values/` is edited by hand like everything else here — the separation is still worth having ahead of that wiring.
 
 ## To onboard
 
-Add one file — `catalog/<service>/<env>.yaml` for a service, `infra/<component>/<env>.yaml` for infrastructure — plus a paired `values/<name>/<env>.yaml` if it needs anything beyond the chart's own defaults.
+Add one file — `catalog/<service>/<env>.yaml` for a service, `infra/<component>/<env>.yaml` for infrastructure — plus a paired `values/<name>/<env>.yaml` if it needs anything beyond the chart's own defaults. For a versioned platform API package, add `packages/<package>/<env>.yaml` instead — see that section above for the contract shape.
 
 ## History
 

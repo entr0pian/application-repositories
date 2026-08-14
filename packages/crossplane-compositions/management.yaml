@@ -1,0 +1,14 @@
+name: crossplane-compositions-management
+environment: management
+
+source:
+  repoURL: https://github.com/entr0pian/crossplane-compositions.git
+  targetRevision: main
+  path: charts/configuration-installer
+
+package:
+  repository: ghcr.io/entr0pian/crossplane-compositions
+  version: v0.1.0
+
+values:
+  pullPolicy: IfNotPresent
