@@ -1,0 +1,11 @@
+name: component-operator-management
+repoURL: https://github.com/entr0pian/component-operator.git
+chart: ""
+chartPath: chart
+targetRevision: main
+namespace: component-operator-system
+createNamespace: true
+serverSideApply: true
+wave: "3"
+notify: true
+values: ""
