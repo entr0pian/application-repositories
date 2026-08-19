@@ -1,0 +1,6 @@
+name: scaffold-operator-management
+values: |
+  manager:
+    image:
+      repository: ghcr.io/entr0pian/scaffold-operator
+      tag: "latest"

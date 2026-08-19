@@ -3,4 +3,4 @@ values: |
   manager:
     image:
       repository: boicotaz/component-operator
-      tag: "349347b74577a517bfe28291914c9676a53d0e18"
+      tag: "latest"
