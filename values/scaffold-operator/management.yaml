@@ -4,3 +4,4 @@ values: |
     image:
       repository: ghcr.io/entr0pian/scaffold-operator
       tag: "latest"
+      pullPolicy: Always

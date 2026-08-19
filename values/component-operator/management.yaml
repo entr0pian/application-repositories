@@ -4,3 +4,4 @@ values: |
     image:
       repository: boicotaz/component-operator
       tag: "latest"
+      pullPolicy: Always
