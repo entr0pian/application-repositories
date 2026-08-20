@@ -3,5 +3,5 @@ values: |
   manager:
     image:
       repository: boicotaz/component-operator
-      tag: "latest"
+      tag: "089d6c7ae1d7fc45567bd4210eac024b6d6c78d3"
       pullPolicy: Always
