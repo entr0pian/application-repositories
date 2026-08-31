@@ -1,8 +1,8 @@
 name: crossplane-provider-config-management
 values: |
   kubernetes:
-    enabled: false
+    enabled: true
   aws:
-    enabled: false
+    enabled: true
   github:
     enabled: true

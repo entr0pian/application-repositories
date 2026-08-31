@@ -7,7 +7,7 @@ values: |
   grafanaDashboard:
     enabled: false
   crossplane:
-    secretPath: ""
+    secretPath: "taskapp/management/crossplane-aws"
   argocdWriteToken:
     secretPath: "taskapp/platform/argocd-write-token"
   crossplaneGithub:
