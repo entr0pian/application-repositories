@@ -3,5 +3,5 @@ values: |
   manager:
     image:
       repository: ghcr.io/entr0pian/release-operator
-      tag: "205378d6027eacdfe82013302084d87c5b525e32"
+      tag: "955924b645c6f7656511d01876cdcbd788d08bc1"
       pullPolicy: Always
