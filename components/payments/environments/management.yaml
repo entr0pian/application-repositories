@@ -1,6 +1,6 @@
 component: payments
 environment: management
-namespace: payments
+namespace: default
 
 source:
   repoURL: https://github.com/entr0pian/payments.git
