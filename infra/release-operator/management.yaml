@@ -1,0 +1,11 @@
+name: release-operator-management
+repoURL: https://github.com/entr0pian/release-operator.git
+chart: ""
+chartPath: chart
+targetRevision: main
+namespace: release-operator-system
+createNamespace: true
+serverSideApply: true
+wave: "3"
+notify: true
+values: ""

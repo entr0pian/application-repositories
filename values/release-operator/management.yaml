@@ -1,0 +1,7 @@
+name: release-operator-management
+values: |
+  manager:
+    image:
+      repository: ghcr.io/entr0pian/release-operator
+      tag: "205378d6027eacdfe82013302084d87c5b525e32"
+      pullPolicy: Always
