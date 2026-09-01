@@ -4,38 +4,48 @@ Source-of-truth repo for onboarding both services and cluster infrastructure int
 
 Three structurally similar ApplicationSets there read directly from this repo:
 
-- **`taskapp-catalog`** reads `catalog/<service>/<env>.yaml` — services (`backend`, `frontend`, ...).
+- **`taskapp-catalog`** reads `components/<service>/environments/<env>.yaml` — services (`payments`, ...).
 - **`taskapp-infra`** reads `infra/<component>/<env>.yaml` — cluster infrastructure (`kube-prometheus-stack`, `platform`, `crossplane`, ...).
 - **`taskapp-packages`** reads `packages/<package>/<env>.yaml` — versioned Crossplane platform API packages (`crossplane-compositions`, ...).
 
-`catalog/`/`infra/` merge their identity file against a paired **`values/<name>/<env>.yaml`** — kept separate on purpose: `catalog/`/`infra/` are onboarding-time facts that rarely change and deserve human review (repo, chart path, namespace); `values/` is what changes on every deploy (image tags, toggles) and is the natural place to eventually scope a CI bot's write access via CODEOWNERS/branch protection, without that bot ever being able to touch where a chart lives. `packages/` doesn't follow this split — see its own section below for why.
+`infra/` merges its identity file against a paired **`values/<name>/<env>.yaml`** via an ApplicationSet `merge` generator. `components/` keeps the same identity/values separation but as two sibling directories per component instead — `environments/<env>.yaml` (onboarding-time facts: repo, chart path, namespace) and `values/<env>.yaml` (what changes on every deploy: image tags, toggles) — read via a multi-source `Application` (`helm.valueFiles` pointing at the paired file by structural path, no merge generator). Both splits exist for the same reason: identity rarely changes and deserves human review, values change on every deploy and is the natural place to eventually scope a CI bot's write access via CODEOWNERS/branch protection, without that bot ever being able to touch where a chart lives. `packages/` doesn't follow either split — see its own section below for why.
 
-No CR, no operator, no write-back commit into another repo, ever. `<name>` and `<env>` always come from the file's own path, never from fields inside it. No cluster URL ever appears here either — both ApplicationSets resolve it live from ArgoCD's own registered clusters.
+No CR, no operator, no write-back commit into another repo, ever. `<name>` and `<env>` always come from the file's own path, never from fields inside it. No cluster URL ever appears here either — every ApplicationSet resolves it live from ArgoCD's own registered clusters.
 
-## catalog/ — services
+## components/ — services
 
 ```yaml
-# catalog/backend/dev.yaml
-repoURL: https://github.com/entr0pian/backend.git
-targetRevision: main
-chartPath: chart
-namespace: default
-values: ""
+# components/payments/environments/management.yaml
+component: payments
+environment: management
+namespace: payments
+
+source:
+  repoURL: https://github.com/entr0pian/payments.git
+  targetRevision: main
+  chartPath: chart
 ```
 
 | Field | Purpose |
 |---|---|
-| `repoURL` / `targetRevision` | The service's own repo and ref |
-| `chartPath` | Where the chart lives inside that repo |
+| `component` | The component name — must match the directory (`components/<component>/...`) |
+| `environment` | Used by `taskapp-catalog`'s cluster selector — must match the filename (`environments/<environment>.yaml`) |
 | `namespace` | Destination namespace |
-| `values` | Always `""` here — real overrides go in the paired `values/` file below |
+| `source.repoURL` / `source.targetRevision` | The service's own repo and ref |
+| `source.chartPath` | Where the chart lives inside that repo |
 
 ```yaml
-# values/backend/dev.yaml  (optional — omit if the chart's own defaults are fine)
-values: |
-  image:
-    tag: "f84c7a80d3ac917285f7184a42e313fd357f8ee9"
+# components/payments/values/management.yaml — a real Helm values file, always required
+# alongside environments/<env>.yaml (a missing pair is a sync error, not "no overrides")
+image:
+  tag: "41769607a44bfdab927e56d1ac89024e4b822cf3"
 ```
+
+The generator glob (`components/*/environments/*.yaml`) structurally cannot match anything
+under the sibling `components/<name>/values/` directory — the paired values file is
+referenced by `helm.valueFiles` as a plain path convention, never re-globbed or merged in
+as a second generator input. See [`RUNTIME_DEPENDENCIES.md`](https://github.com/entr0pian/platform-architecture/blob/main/RUNTIME_DEPENDENCIES.md#gitops-file-layout)
+in `platform-architecture` for the full design and the ApplicationSet reshape it's built on.
 
 ## infra/ — cluster infrastructure
 
@@ -120,12 +130,14 @@ Adding a new package (e.g. a future `platform-rds`) is just a new
 `packages/<package>/<env>.yaml` file here — `argocd`'s `taskapp-packages` ApplicationSet
 is generic over the contract above and needs no changes.
 
-**Not onboarded here:** `backend-operator` isn't currently deployed anywhere (`operator.enabled` was `false` in every environment before this repo existed) — add `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above whenever it's actually needed. `backend`'s (and eventually `frontend`'s) CI still needs repointing to write `values/<service>/<env>.yaml`'s `values.image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet. Until that lands, `values/` is edited by hand like everything else here — the separation is still worth having ahead of that wiring.
+**Not onboarded here:** `backend`, `frontend`, and `backend-operator` aren't currently onboarded — `backend` was removed from `catalog/` as part of the `components/` reshape below and not yet re-added (add `components/backend/{environments,values}/<env>.yaml` the same way as `payments` whenever it's needed again); `backend-operator` needs `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above. `payments`' (and eventually any other service's) CI still needs repointing to write `components/<service>/values/<env>.yaml`'s `image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet (the planned `Release` API/controller, see `platform-architecture`, is meant to close this). Until that lands, `values/` is edited by hand like everything else here.
 
 ## To onboard
 
-Add one file — `catalog/<service>/<env>.yaml` for a service, `infra/<component>/<env>.yaml` for infrastructure — plus a paired `values/<name>/<env>.yaml` if it needs anything beyond the chart's own defaults. For a versioned platform API package, add `packages/<package>/<env>.yaml` instead — see that section above for the contract shape.
+Add a `components/<service>/environments/<env>.yaml` + paired `components/<service>/values/<env>.yaml` pair for a service, or `infra/<component>/<env>.yaml` (+ paired `values/<name>/<env>.yaml` if needed) for infrastructure. For a versioned platform API package, add `packages/<package>/<env>.yaml` instead — see that section above for the contract shape.
 
 ## History
 
 This repo previously used `crs/` — `ApplicationRepository` custom resources reconciled by [`application-repository-operator`](https://github.com/entr0pian/application-repository-operator), which wrote generated deployment config back into `argocd`. That path has been retired: the operator's Argo CD Application was removed, and `crs/` was deleted. The operator's own repo still exists but is no longer deployed anywhere in this stack. The `values/` split was briefly folded away (the reasoning: nothing writes to it automatically yet, so it wasn't earning its keep) and then restored — identity and parameters are a real separation of concerns worth keeping even before an automated writer exists for `values/`.
+
+`catalog/<service>/<env>.yaml` (merged against `values/<service>/<env>.yaml` by an ApplicationSet `merge` generator, same shape as today's `infra/`) was retired in favor of `components/<service>/{environments,values}/<env>.yaml`, read via a multi-source `Application` (`helm.valueFiles`) instead — see the `components/` section above. The reshape avoids the `merge` generator's flat-key-lookup limitation (every file needed a redundant `name: <svc>-<env>` field purely to be a valid join key) and the `helm.values` string-templated-YAML-inside-YAML it relied on. `infra/`/`packages/` are unaffected — this reshape is scoped to `taskapp-catalog` only.
