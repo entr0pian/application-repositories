@@ -1,5 +1,0 @@
-image:
-    tag: 4602f5c24671261337f19b56cea7004d58dd8a2d
-database:
-    enabled: true
-    secretName: checkout-db-database-connection-details
