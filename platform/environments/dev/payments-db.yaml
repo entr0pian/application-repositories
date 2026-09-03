@@ -1,0 +1,11 @@
+apiVersion: database.taskapp.io/v1alpha1
+kind: Database
+metadata:
+  name: payments-db
+  labels:
+    platform.taskapp.io/component: payments
+spec:
+  componentRef:
+    name: payments
+  dbName: paymentsdb
+  size: small
