@@ -1,0 +1,14 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: Component
+metadata:
+  name: payments
+  labels:
+    platform.taskapp.io/component: payments
+spec:
+  owner: payments-team
+  repository:
+    name: payments
+    visibility: public
+  scaffold:
+    template: golang-service
+    version: "0.3.0"
