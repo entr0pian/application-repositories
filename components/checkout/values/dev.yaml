@@ -1,0 +1,7 @@
+image:
+    tag: latest
+bindings:
+    database:
+        type: secret
+        provider: aws-secrets-manager
+        remoteRef: /bindings/dev/databases/checkout-db
