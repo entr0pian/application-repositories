@@ -1,0 +1,10 @@
+apiVersion: database.taskapp.io/v1alpha1
+kind: Database
+metadata:
+  name: checkout-db
+  labels:
+    platform.taskapp.io/component: checkout
+spec:
+  componentRef:
+    name: checkout
+  dbName: checkoutdb
