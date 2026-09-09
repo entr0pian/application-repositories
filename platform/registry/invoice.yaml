@@ -1,0 +1,14 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: Component
+metadata:
+  name: invoice
+  labels:
+    platform.taskapp.io/component: invoice
+spec:
+  owner: invoice-team
+  repository:
+    name: invoice
+    visibility: public
+  scaffold:
+    template: golang-service
+    version: "0.4.0"
