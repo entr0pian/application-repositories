@@ -11,10 +11,14 @@ values: |
     # backstage namespace too since Secrets don't mount cross-namespace.
     secretPath: "taskapp/platform/crossplane-github-token"
     clusterSecretStoreName: aws-secrets-manager
-  # baseUrl left empty: this cluster has no real DNS hostname for backstage
-  # yet. Set it (and ingress.enabled: true) once one exists — until then
-  # this is reachable via kubectl port-forward, and its own internal links
-  # will be wrong.
-  baseUrl: ""
+  # This cluster has no real DNS hostname for backstage yet, so the only way
+  # in is `kubectl port-forward svc/backstage 7007:7007` — set baseUrl to
+  # match that exactly. Leaving it at the stock app-config.yaml default
+  # (app.baseUrl=:3000, a separate dev-mode frontend port that doesn't exist
+  # in this single-process packaged image, vs. backend.baseUrl=:7007) breaks
+  # the guest-auth popup handshake ("Failed to sign in as a guest using the
+  # auth backend"), since it validates against app.baseUrl. Once there's a
+  # real ingress hostname, switch this (and ingress.enabled) to that instead.
+  baseUrl: "http://localhost:7007"
   ingress:
     enabled: false
