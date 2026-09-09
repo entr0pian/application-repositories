@@ -2,11 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    # No commit has been built and pushed yet (backstage's CI workflow was
-    # just added) — "latest" is real once main's first CI run lands, but pin
-    # this to a commit SHA like every other component here as soon as one
-    # exists.
-    tag: "latest"
+    tag: "69f33a90f8bf192ff64dba2f378cdaa435a43e28"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
