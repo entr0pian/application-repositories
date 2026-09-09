@@ -1,0 +1,11 @@
+name: backstage-management
+repoURL: https://github.com/entr0pian/backstage.git
+chart: ""
+chartPath: chart
+targetRevision: main
+namespace: backstage
+createNamespace: true
+serverSideApply: true
+wave: "3"
+notify: true
+values: ""
