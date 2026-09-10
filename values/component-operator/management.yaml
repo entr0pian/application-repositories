@@ -2,6 +2,6 @@ name: component-operator-management
 values: |
   manager:
     image:
-      repository: boicotaz/component-operator
-      tag: "0e104350b4df8c079247e391347c17348ac5945b"
+      repository: ghcr.io/entr0pian/component-operator
+      tag: "4bb852f9b4692ce4a4a0717dec5c7ffcbaaed265"
       pullPolicy: Always
