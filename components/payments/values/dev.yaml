@@ -1,5 +1,0 @@
-image:
-    tag: latest
-database:
-    enabled: true
-    secretName: payments-db-database-connection-details
