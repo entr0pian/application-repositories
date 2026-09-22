@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "f727246086146a127e657f3ecf8421164bde25f6"
+    tag: "7d0155677b2ca3af170dfadb95dbbbbaf3bf0a10"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
@@ -22,3 +22,14 @@ values: |
   baseUrl: "http://localhost:7007"
   ingress:
     enabled: false
+  # Discovers Database CRs from these namespaces and publishes them as
+  # catalog Resource entities related to their owning Component (see
+  # backstage/packages/backend/src/modules/platformEntityProvider/ and
+  # BACKSTAGE_PART4.md). "management" included alongside dev/prod since this
+  # cluster is currently standing in for all three environments.
+  platformCatalog:
+    enabled: true
+    namespaces:
+      - dev
+      - prod
+      - management
