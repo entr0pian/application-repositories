@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "11576eec152df5c2c651e8dc0ce4054702344c63"
+    tag: "20b6f4c1ead239785bd7ab0541f16a879aeba363"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
@@ -15,6 +15,12 @@ values: |
     # Read-only "backstage" ArgoCD API account (bootstrap-cluster/install-argocd
     # values.yaml's accounts.backstage/policy.csv) — see BACKSTAGE_PART5.md.
     secretPath: "taskapp/platform/argocd-backstage-token"
+    clusterSecretStoreName: aws-secrets-manager
+  githubAuth:
+    # GitHub OAuth App credentials for the owner sign-in — only the GitHub
+    # user with a matching User entity (backstage/org-data/users.yaml) can
+    # sign in this way; everyone else browses read-only as guest.
+    secretPath: "taskapp/platform/backstage-github-oauth"
     clusterSecretStoreName: aws-secrets-manager
   deployments:
     # Turns on the Deployments tab: @backstage-community/plugin-argocd's
