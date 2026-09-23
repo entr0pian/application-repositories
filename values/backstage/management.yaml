@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "7d0155677b2ca3af170dfadb95dbbbbaf3bf0a10"
+    tag: "d6ae86c0a442c316bc2380e2c7904062f126a10a"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
@@ -11,6 +11,15 @@ values: |
     # backstage namespace too since Secrets don't mount cross-namespace.
     secretPath: "taskapp/platform/crossplane-github-token"
     clusterSecretStoreName: aws-secrets-manager
+  argocd:
+    # Read-only "backstage" ArgoCD API account (bootstrap-cluster/install-argocd
+    # values.yaml's accounts.backstage/policy.csv) — see BACKSTAGE_PART5.md.
+    secretPath: "taskapp/platform/argocd-backstage-token"
+    clusterSecretStoreName: aws-secrets-manager
+  deployments:
+    # Turns on the Deployments tab: @backstage-community/plugin-argocd's
+    # entity tabs + the Release Versions card. See BACKSTAGE_PART5.md.
+    enabled: true
   # This cluster has no real DNS hostname for backstage yet, so the only way
   # in is `kubectl port-forward svc/backstage 7007:7007` — set baseUrl to
   # match that exactly. Leaving it at the stock app-config.yaml default
