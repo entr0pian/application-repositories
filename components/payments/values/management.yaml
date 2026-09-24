@@ -1,0 +1,7 @@
+image:
+    tag: 6f9fe922f304962cedf1faf400f2f11660e068ee
+bindings:
+    database:
+        type: secret
+        provider: aws-secrets-manager
+        remoteRef: /bindings/management/databases/payments-db
