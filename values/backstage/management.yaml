@@ -31,17 +31,31 @@ values: |
     # per-environment Logs (owner only, via the permission policy). See
     # BACKSTAGE_PART8.md.
     enabled: true
-  # This cluster has no real DNS hostname for backstage yet, so the only way
-  # in is `kubectl port-forward svc/backstage 7007:7007` — set baseUrl to
-  # match that exactly. Leaving it at the stock app-config.yaml default
-  # (app.baseUrl=:3000, a separate dev-mode frontend port that doesn't exist
-  # in this single-process packaged image, vs. backend.baseUrl=:7007) breaks
-  # the guest-auth popup handshake ("Failed to sign in as a guest using the
-  # auth backend"), since it validates against app.baseUrl. Once there's a
-  # real ingress hostname, switch this (and ingress.enabled) to that instead.
-  baseUrl: "http://localhost:7007"
+  # Public URL. Must match what the browser actually uses: the guest-auth
+  # popup handshake validates against app.baseUrl, so a port-forward
+  # (http://localhost:7007) no longer signs in once this is set - use the
+  # real URL. The GitHub OAuth App's callback must be
+  # <baseUrl>/api/auth/github/handler/frame.
+  baseUrl: "https://platform.gerodimos.dev"
+  # ALB via the AWS Load Balancer Controller; external-dns publishes the host
+  # as a Route53 alias to it. TLS terminates at the ALB with the ACM
+  # certificate from bootstrap-cluster/terraform/dns, auto-discovered by
+  # host (*.gerodimos.dev) - no certificate ARN needed here.
   ingress:
-    enabled: false
+    enabled: true
+    className: alb
+    host: platform.gerodimos.dev
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      # Straight to pod IPs (VPC CNI) - no NodePort hop.
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+      alb.ingress.kubernetes.io/ssl-redirect: "443"
+      alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      # Every management-cluster Ingress with this group shares one ALB
+      # (argocd., grafana. later) instead of one ALB each.
+      alb.ingress.kubernetes.io/group.name: platform
+      alb.ingress.kubernetes.io/healthcheck-path: /
   # Discovers Database CRs from these namespaces and publishes them as
   # catalog Resource entities related to their owning Component (see
   # backstage/packages/backend/src/modules/platformEntityProvider/ and
