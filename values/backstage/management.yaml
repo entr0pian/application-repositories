@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "a95b7781993cb13385425837b8e1acb6c668ad83"
+    tag: "0151efd5eec114b9b8fcbab4ce6a3d0ca65e26c7"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
@@ -25,6 +25,11 @@ values: |
   deployments:
     # Turns on the Deployments tab: @backstage-community/plugin-argocd's
     # entity tabs + the Release Versions card. See BACKSTAGE_PART5.md.
+    enabled: true
+  kubernetes:
+    # Read-only Kubernetes plugin backend + RBAC, for the Deployments tab's
+    # per-environment Logs (owner only, via the permission policy). See
+    # BACKSTAGE_PART8.md.
     enabled: true
   # This cluster has no real DNS hostname for backstage yet, so the only way
   # in is `kubectl port-forward svc/backstage 7007:7007` — set baseUrl to
