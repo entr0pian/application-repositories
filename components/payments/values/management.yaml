@@ -1,5 +1,5 @@
 image:
-    tag: d82b3e9e1f8fcff59fd0307bec8a845df8fd7332
+    tag: 6f9fe922f304962cedf1faf400f2f11660e068ee
 bindings:
     database:
         type: secret
