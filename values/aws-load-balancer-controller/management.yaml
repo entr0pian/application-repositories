@@ -1,0 +1,19 @@
+name: aws-load-balancer-controller-management
+values: |
+  # Turns Ingresses (ingressClassName: alb) into ALBs. AWS permissions come
+  # from EKS Pod Identity - bootstrap-cluster/terraform/modules/eks-cluster's
+  # lb-controller.tf binds its IAM role to kube-system/<serviceAccount.name>,
+  # so the name below is part of that contract; no role-ARN annotation.
+  clusterName: taskapp-management
+  region: eu-west-1
+  # The account's default VPC, where modules/eks-cluster places every cluster.
+  # Set explicitly so the controller doesn't depend on reaching IMDS.
+  vpcId: vpc-0274e6e3e08a56006
+  serviceAccount:
+    name: aws-load-balancer-controller
+  # Single-node cluster - a second replica only competes for the same node.
+  replicaCount: 1
+  # Only Ingresses are used. This webhook intercepts every Service create
+  # cluster-wide with failurePolicy Fail, so while the controller isn't up
+  # yet (every daily bootstrap) it would block unrelated Services.
+  enableServiceMutatorWebhook: false
