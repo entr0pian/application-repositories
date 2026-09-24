@@ -1,0 +1,11 @@
+name: external-dns-management
+repoURL: https://kubernetes-sigs.github.io/external-dns
+chart: external-dns
+chartPath: ""
+targetRevision: "1.22.0"
+namespace: external-dns
+createNamespace: true
+serverSideApply: false
+wave: "1"
+notify: false
+values: ""

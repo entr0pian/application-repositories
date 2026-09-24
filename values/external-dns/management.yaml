@@ -1,0 +1,31 @@
+name: external-dns-management
+values: |
+  # Publishes each Ingress host (e.g. platform.gerodimos.dev) as a Route53
+  # alias to the ALB the AWS Load Balancer Controller created for it. AWS
+  # permissions come from EKS Pod Identity - bootstrap-cluster/terraform/
+  # modules/eks-cluster's external-dns.tf binds its role (write access to the
+  # gerodimos.dev zone only) to external-dns/<serviceAccount.name>.
+  provider:
+    name: aws
+  serviceAccount:
+    name: external-dns
+  sources:
+    - ingress
+  # sync: also deletes records whose Ingress is gone - but only records this
+  # instance owns (TXT registry below), never anything created by hand or by
+  # another cluster.
+  policy: sync
+  # Ownership marker written next to every record. Stable across the daily
+  # cluster recreate on purpose: a new cluster adopts yesterday's records
+  # (which still point at yesterday's deleted ALB) and repoints them.
+  txtOwnerId: taskapp-management
+  # management owns the zone's top level (platform., argocd., ...); dev/prod
+  # clusters get <component>.<env>.gerodimos.dev, each fenced to its own
+  # subdomain by its own external-dns - so they're excluded here.
+  domainFilters:
+    - gerodimos.dev
+  excludeDomains:
+    - dev.gerodimos.dev
+    - prod.gerodimos.dev
+  extraArgs:
+    - --aws-zone-type=public
