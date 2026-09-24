@@ -45,7 +45,11 @@ image:
 The generator glob (`components/*/environments/*.yaml`) structurally cannot match anything
 under the sibling `components/<name>/values/` directory — the paired values file is
 referenced by `helm.valueFiles` as a plain path convention, never re-globbed or merged in
-as a second generator input. See [`RUNTIME_DEPENDENCIES.md`](https://github.com/entr0pian/platform-architecture/blob/main/RUNTIME_DEPENDENCIES.md#gitops-file-layout)
+as a second generator input. The component name and environment (from this identity
+file's path/fields) are also passed to the chart as Helm parameters `platform.component` /
+`platform.environment`, which a platform-scaffolded chart renders as
+`platform.taskapp.io/{component,environment}` labels on its workloads — never set them in
+`values/`. See [`RUNTIME_DEPENDENCIES.md`](https://github.com/entr0pian/platform-architecture/blob/main/RUNTIME_DEPENDENCIES.md#gitops-file-layout)
 in `platform-architecture` for the full design and the ApplicationSet reshape it's built on.
 
 ## infra/ — cluster infrastructure
