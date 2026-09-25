@@ -1,0 +1,15 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: Release
+metadata:
+  name: payments-management
+  labels:
+    platform.taskapp.io/component: payments
+spec:
+  componentRef:
+    name: payments
+  environment: management
+  version: "ff5987e8395c2fc8f52f3cd078416830244b5019"
+  bindings:
+    database:
+      enabled: true
+      ref: payments-db
