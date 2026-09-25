@@ -1,0 +1,11 @@
+name: cert-manager-management
+repoURL: https://charts.jetstack.io
+chart: cert-manager
+chartPath: ""
+targetRevision: "v1.21.2"
+namespace: cert-manager
+createNamespace: true
+serverSideApply: true
+wave: "0"
+notify: false
+values: ""

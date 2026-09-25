@@ -1,0 +1,8 @@
+name: cert-manager-management
+values: |
+  # Issues in-cluster TLS certs from Certificate CRs, and its cainjector fills
+  # webhook caBundles from the cert-manager.io/inject-ca-from annotation.
+  # Used by aws-load-balancer-controller (enableCertManager) so its webhook
+  # cert/CA are created once in-cluster instead of on every Helm render.
+  crds:
+    enabled: true

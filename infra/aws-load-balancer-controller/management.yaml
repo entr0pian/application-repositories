@@ -9,25 +9,3 @@ serverSideApply: true
 wave: "1"
 notify: false
 values: ""
-# The chart generates its webhook serving cert + CA with genSignedCert, i.e.
-# a new random pair on every render. Without this, a later sync re-applies
-# the Secret from a different render than the webhooks' caBundle and every
-# Ingress create/update fails TLS verification. Ignored = set once on create,
-# never re-applied (see taskapp-argocd's infra-appset templatePatch).
-ignoreDifferences:
-  - group: admissionregistration.k8s.io
-    kind: MutatingWebhookConfiguration
-    name: aws-load-balancer-webhook
-    jqPathExpressions:
-      - .webhooks[].clientConfig.caBundle
-  - group: admissionregistration.k8s.io
-    kind: ValidatingWebhookConfiguration
-    name: aws-load-balancer-webhook
-    jqPathExpressions:
-      - .webhooks[].clientConfig.caBundle
-  - group: ""
-    kind: Secret
-    name: aws-load-balancer-tls
-    namespace: kube-system
-    jsonPointers:
-      - /data

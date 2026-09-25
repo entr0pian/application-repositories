@@ -17,3 +17,9 @@ values: |
   # cluster-wide with failurePolicy Fail, so while the controller isn't up
   # yet (every daily bootstrap) it would block unrelated Services.
   enableServiceMutatorWebhook: false
+  # Webhook serving cert + CA come from cert-manager Certificates, and
+  # cainjector writes the matching caBundle. Without this the chart generates
+  # a random cert/CA on every render, and ArgoCD's repeated renders can leave
+  # the Secret and the webhooks' caBundle from different renders (x509 errors
+  # on every Ingress). Needs infra/cert-manager.
+  enableCertManager: true

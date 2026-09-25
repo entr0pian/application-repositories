@@ -78,7 +78,6 @@ values: ""
 | `wave` | Sync-wave string, e.g. `"0"`, `"1"`, `"2"` |
 | `notify` | Boolean — subscribe this Application to the `#deployments` Slack channel on sync succeeded/failed |
 | `values` | Always `""` here — real overrides go in the paired `values/` file |
-| `ignoreDifferences` | *Optional* — standard Application `ignoreDifferences` list, also turns on `RespectIgnoreDifferences=true`. Only for charts that render non-deterministic fields (e.g. `aws-load-balancer-controller`'s self-generated webhook cert), so ArgoCD sets them once and never re-applies a fresh render over them. Omit everywhere else |
 
 ```yaml
 # values/platform/dev.yaml
