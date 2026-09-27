@@ -1,0 +1,7 @@
+image:
+    tag: f3f4dbb1de81550cffcfc7904fc948f77fa73f1f
+bindings:
+    database:
+        type: secret
+        provider: aws-secrets-manager
+        remoteRef: /bindings/management/databases/checkout-db
