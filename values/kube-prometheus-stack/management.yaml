@@ -28,6 +28,14 @@ values: |
   alertmanager:
     enabled: false
 
+  # Linux nodes only: skip the AIX/macOS node-exporter dashboards.
+  nodeExporter:
+    operatingSystems:
+      aix:
+        enabled: false
+      darwin:
+        enabled: false
+
   prometheus:
     prometheusSpec:
       # Select monitors/rules from every namespace regardless of labels.
@@ -86,6 +94,11 @@ values: |
       enabled: false
     persistence:
       enabled: false
+    # Alertmanager is disabled above; don't provision a datasource for it.
+    sidecar:
+      datasources:
+        alertmanager:
+          enabled: false
     # Admin credentials come from the ExternalSecret below, not the chart:
     # the chart's own random password would be regenerated on every Argo CD
     # render (Argo CD doesn't support Helm lookup).
