@@ -1,0 +1,137 @@
+name: kube-prometheus-stack-management
+values: |
+  crds:
+    enabled: true
+
+  # EKS runs the control plane: its scheduler, controller-manager and etcd
+  # can't be scraped, and kube-proxy binds its metrics to localhost. Skip
+  # their ServiceMonitors and rules instead of carrying permanently-down
+  # targets.
+  kubeControllerManager:
+    enabled: false
+  kubeScheduler:
+    enabled: false
+  kubeEtcd:
+    enabled: false
+  kubeProxy:
+    enabled: false
+  defaultRules:
+    rules:
+      etcd: false
+      kubeControllerManager: false
+      kubeProxy: false
+      kubeSchedulerAlerting: false
+      kubeSchedulerRecording: false
+      windows: false
+
+  # No alert routing yet (later milestone).
+  alertmanager:
+    enabled: false
+
+  prometheus:
+    prometheusSpec:
+      # Select monitors/rules from every namespace regardless of labels.
+      # platform-scaffolds' golang-service ServiceMonitors carry no
+      # `release: kube-prometheus-stack` label and rely on this.
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorNamespaceSelector: {}
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorNamespaceSelector: {}
+      ruleSelectorNilUsesHelmValues: false
+      ruleNamespaceSelector: {}
+      probeSelectorNilUsesHelmValues: false
+      scrapeConfigSelectorNilUsesHelmValues: false
+      # No storageSpec: the TSDB lives in an emptyDir on the node's disk.
+      # The cluster is recreated daily and has no EBS CSI driver, so a PVC
+      # would buy nothing. retentionSize keeps it well inside the 20Gi root
+      # volume.
+      retention: 2d
+      retentionSize: 4GB
+      resources:
+        requests:
+          cpu: 200m
+          memory: 768Mi
+        limits:
+          memory: 2Gi
+
+  prometheusOperator:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+
+  kube-state-metrics:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+
+  prometheus-node-exporter:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+
+  # Private for now: reach it with kubectl port-forward. Public
+  # grafana.gerodimos.dev (shared `platform` ALB group, anonymous Viewer)
+  # is a later step.
+  grafana:
+    ingress:
+      enabled: false
+    persistence:
+      enabled: false
+    # Admin credentials come from the ExternalSecret below, not the chart:
+    # the chart's own random password would be regenerated on every Argo CD
+    # render (Argo CD doesn't support Helm lookup).
+    admin:
+      existingSecret: grafana-admin
+      userKey: admin-user
+      passwordKey: admin-password
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 384Mi
+
+  # Grafana admin password, generated once in-cluster by ESO's Password
+  # generator (refreshInterval "0" = never regenerated). New cluster, new
+  # password: kubectl -n monitoring get secret grafana-admin.
+  # Strings, not maps, because the chart runs extraManifests through tpl:
+  # the {{ "{{ ... }}" }} escapes leave ESO's own template syntax intact.
+  extraManifests:
+    - |
+      apiVersion: generators.external-secrets.io/v1alpha1
+      kind: Password
+      metadata:
+        name: grafana-admin
+      spec:
+        length: 32
+        symbols: 0
+        digits: 6
+    - |
+      apiVersion: external-secrets.io/v1beta1
+      kind: ExternalSecret
+      metadata:
+        name: grafana-admin
+      spec:
+        refreshInterval: "0"
+        target:
+          name: grafana-admin
+          creationPolicy: Owner
+          template:
+            data:
+              admin-user: admin
+              admin-password: '{{ "{{ .password }}" }}'
+        dataFrom:
+          - sourceRef:
+              generatorRef:
+                apiVersion: generators.external-secrets.io/v1alpha1
+                kind: Password
+                name: grafana-admin
