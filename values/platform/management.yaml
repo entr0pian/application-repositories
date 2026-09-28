@@ -6,7 +6,7 @@ values: |
     recordingRules:
       enabled: true
   grafanaDashboard:
-    enabled: false
+    enabled: true
   crossplane:
     secretPath: "taskapp/management/crossplane-aws"
   argocdWriteToken:
