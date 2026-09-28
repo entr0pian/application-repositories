@@ -111,12 +111,13 @@ values: |
       existingSecret: grafana-admin
       userKey: admin-user
       passwordKey: admin-password
+    # 384Mi was OOMKilled loading dashboards on Grafana 13.
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 256Mi
       limits:
-        memory: 384Mi
+        memory: 768Mi
 
   # Grafana admin password, generated once in-cluster by ESO's Password
   # generator (refreshInterval "0" = never regenerated). New cluster, new
