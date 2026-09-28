@@ -71,6 +71,11 @@ values: |
         memory: 256Mi
 
   kube-state-metrics:
+    # kube_pod_labels is only emitted for allowlisted labels. The platform
+    # chart's platform.infrastructure recording rules join cAdvisor/limit
+    # series against these two to attach component/environment.
+    metricLabelsAllowlist:
+      - pods=[platform.taskapp.io/component,platform.taskapp.io/environment]
     resources:
       requests:
         cpu: 20m

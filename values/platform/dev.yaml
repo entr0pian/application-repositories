@@ -2,8 +2,6 @@ name: platform-dev
 values: |
   limitRange:
     enabled: true
-  prometheusRules:
-    enabled: true
   grafanaDashboard:
     enabled: true
   crossplane:

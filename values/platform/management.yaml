@@ -2,8 +2,9 @@ name: platform-management
 values: |
   limitRange:
     enabled: false
-  prometheusRules:
-    enabled: false
+  observability:
+    recordingRules:
+      enabled: true
   grafanaDashboard:
     enabled: false
   crossplane:
