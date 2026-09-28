@@ -8,7 +8,7 @@ spec:
   componentRef:
     name: payments
   environment: management
-  version: "02577f20a427da08c3b9dc195fb7cf7ae163153b"
+  version: "f39bf9eb0dcea430b0aa491abd2966970ae728b1"
   bindings:
     database:
       enabled: true
