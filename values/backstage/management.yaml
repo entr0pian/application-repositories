@@ -31,6 +31,10 @@ values: |
     # per-environment Logs (owner only, via the permission policy). See
     # BACKSTAGE_PART8.md.
     enabled: true
+  observability:
+    # Cluster-internal Prometheus for the Metrics tab's fixed-query backend
+    # route (OBSERVABILLITY_PART4.md Part 3). Never exposed publicly.
+    prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
   # Public URL. Must match what the browser actually uses: the guest-auth
   # popup handshake validates against app.baseUrl, so a port-forward
   # (http://localhost:7007) no longer signs in once this is set - use the
