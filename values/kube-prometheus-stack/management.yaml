@@ -54,6 +54,14 @@ values: |
       # would buy nothing. retentionSize keeps it well inside the 20Gi root
       # volume.
       retention: 2d
+      # Grafana is public with anonymous Viewer (below), and a Viewer can
+      # send any PromQL through Grafana's datasource API, Explore hidden or
+      # not. Bound what one query can cost: the platform dashboard and
+      # Backstage's Metrics tab need a fraction of these.
+      query:
+        timeout: 30s
+        maxSamples: 5000000
+        maxConcurrency: 8
       retentionSize: 4GB
       resources:
         requests:
@@ -71,11 +79,14 @@ values: |
         memory: 256Mi
 
   kube-state-metrics:
-    # kube_pod_labels is only emitted for allowlisted labels. The platform
-    # chart's platform.infrastructure recording rules join cAdvisor/limit
-    # series against these two to attach component/environment.
+    # kube_pod_labels / kube_deployment_labels only carry allowlisted
+    # labels. The platform chart's platform.infrastructure recording rules
+    # join cAdvisor / kube-state-metrics series against these two to attach
+    # component/environment: pod series via namespace+pod, deployment
+    # replica series via namespace+deployment.
     metricLabelsAllowlist:
       - pods=[platform.taskapp.io/component,platform.taskapp.io/environment]
+      - deployments=[platform.taskapp.io/component,platform.taskapp.io/environment]
     resources:
       requests:
         cpu: 20m
@@ -91,19 +102,66 @@ values: |
       limits:
         memory: 128Mi
 
-  # Private for now: reach it with kubectl port-forward. Public
-  # grafana.gerodimos.dev (shared `platform` ALB group, anonymous Viewer)
-  # is a later step.
+  # Public at grafana.gerodimos.dev, read-only: anonymous visitors are
+  # Viewers, the admin account (grafana-admin Secret below) still signs in
+  # for anything else. Backstage's Metrics tab deep-links here.
   grafana:
+    # The stock Kubernetes dashboards are dropped from this public instance
+    # so it opens on the platform's own dashboard rather than dozens of
+    # cluster ones. Only the dashboards: kube-prometheus-stack's rules and
+    # scrape config are unaffected. Set true to get them back.
+    defaultDashboardsEnabled: false
     ingress:
-      enabled: false
+      enabled: true
+      ingressClassName: alb
+      hosts:
+        - grafana.gerodimos.dev
+      # Same ALB settings as Backstage's and Argo CD's Ingresses; the shared
+      # `platform` group puts all three behind one ALB.
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+        alb.ingress.kubernetes.io/ssl-redirect: "443"
+        alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+        alb.ingress.kubernetes.io/group.name: platform
+        alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    grafana.ini:
+      server:
+        root_url: https://grafana.gerodimos.dev
+      auth.anonymous:
+        enabled: true
+        org_name: Main Org.
+        org_role: Viewer
+      users:
+        allow_sign_up: false
+      # Opens on Platform — Service Overview. The sidecar writes each
+      # dashboard ConfigMap key as a file under /tmp/dashboards.
+      dashboards:
+        default_home_dashboard_path: /tmp/dashboards/platform-service-overview.json
+      # Datasource requests Grafana proxies (i.e. every panel query)
+      # give up after 30s, matching Prometheus' own query timeout.
+      dataproxy:
+        timeout: 30
+      # Viewers can't share dashboards publicly or snapshot them out.
+      public_dashboards:
+        enabled: false
+      snapshots:
+        enabled: false
     persistence:
       enabled: false
-    # Alertmanager is disabled above; don't provision a datasource for it.
     sidecar:
+      # Alertmanager is disabled above; don't provision a datasource for it.
       datasources:
+        timeout: 30
         alertmanager:
           enabled: false
+      # With the stock dashboards off, everything the sidecar loads is a
+      # platform dashboard (helm-charts/platform's grafana_dashboard
+      # ConfigMaps).
+      dashboards:
+        provider:
+          folder: Platform
     # Admin credentials come from the ExternalSecret below, not the chart:
     # the chart's own random password would be regenerated on every Argo CD
     # render (Argo CD doesn't support Helm lookup).
