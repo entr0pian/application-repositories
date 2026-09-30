@@ -26,6 +26,12 @@ values: |
     # Turns on the Deployments tab: @backstage-community/plugin-argocd's
     # entity tabs + the Release Versions card. See BACKSTAGE_PART5.md.
     enabled: true
+  # Environments a component can be deployed to (Create deployment's
+  # picker): one per cluster registered with Argo CD. Add a cluster here
+  # when it's created - no Backstage image rebuild needed.
+  environments:
+    - management
+    - dev
   kubernetes:
     # Read-only Kubernetes plugin backend + RBAC, for the Deployments tab's
     # per-environment Logs (owner only, via the permission policy). See
