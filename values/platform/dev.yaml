@@ -7,7 +7,7 @@ values: |
   limitRange:
     enabled: true
   grafanaDashboard:
-    enabled: true
+    enabled: false
   crossplane:
     secretPath: ""
   argocdWriteToken:

@@ -4,6 +4,10 @@ values: |
     aws:
       # ESO authenticates via EKS Pod Identity, no static key
       auth: podIdentity
+  # Workload clusters ArgoCD here delivers to (see the platform chart's
+  # external-secret-registered-clusters.yaml)
+  registeredClusters:
+    - dev
   limitRange:
     enabled: false
   observability:
