@@ -1,5 +1,9 @@
 name: platform-management
 values: |
+  clusterSecretStore:
+    aws:
+      # ESO authenticates via EKS Pod Identity, no static key
+      auth: podIdentity
   limitRange:
     enabled: false
   observability:
