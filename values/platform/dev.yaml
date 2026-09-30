@@ -14,3 +14,6 @@ values: |
     secretPath: ""
   crossplaneGithub:
     secretPath: ""
+  # Read-only RBAC for management's Backstage (Deployments tab Logs/Details).
+  backstageReader:
+    enabled: true
