@@ -55,6 +55,25 @@ values: |
       # cluster is ephemeral.
       retention: 2d
       retentionSize: 4GB
+      # Ship platform metrics to Mimir on management, exactly like
+      # management's Prometheus: only series with both component and
+      # environment (platform components + platform:* rules); raw Kubernetes
+      # metrics stay local. Credentials: mimir-remote-write (ExternalSecret
+      # below), dev's own writer.
+      remoteWrite:
+        - name: mimir
+          url: https://mimir.gerodimos.dev/api/v1/push
+          basicAuth:
+            username:
+              name: mimir-remote-write
+              key: username
+            password:
+              name: mimir-remote-write
+              key: password
+          writeRelabelConfigs:
+            - sourceLabels: [component, environment]
+              regex: ".+;.+"
+              action: keep
       resources:
         requests:
           cpu: 200m
