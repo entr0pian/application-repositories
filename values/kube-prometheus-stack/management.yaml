@@ -63,6 +63,27 @@ values: |
         maxSamples: 5000000
         maxConcurrency: 8
       retentionSize: 4GB
+      # Also ship platform metrics to Mimir (local TSDB stays as is). Only
+      # series carrying both component and environment are sent: the
+      # platform components' own metrics (ServiceMonitor relabeling) and the
+      # platform:* recording rules - everything Grafana and Backstage
+      # visualize. Raw Kubernetes metrics stay local. Since every sent series
+      # has environment, environments can't collide in Mimir. Credentials:
+      # mimir-remote-write (ExternalSecret below), this environment's writer.
+      remoteWrite:
+        - name: mimir
+          url: https://mimir.gerodimos.dev/api/v1/push
+          basicAuth:
+            username:
+              name: mimir-remote-write
+              key: username
+            password:
+              name: mimir-remote-write
+              key: password
+          writeRelabelConfigs:
+            - sourceLabels: [component, environment]
+              regex: ".+;.+"
+              action: keep
       resources:
         requests:
           cpu: 200m
