@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "06566db47426ee252ffcd52271c9c9ebfe703746"
+    tag: "2a05054138e373d948e95db046e191134371dae8"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
@@ -38,9 +38,13 @@ values: |
     # BACKSTAGE_PART8.md.
     enabled: true
   observability:
-    # Cluster-internal Prometheus for the Metrics tab's fixed-query backend
-    # route (OBSERVABILLITY_PART4.md Part 3). Never exposed publicly.
-    prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+    # The Metrics tab's fixed queries read Mimir's in-cluster query-frontend
+    # (tenant "platform"), where every environment's Prometheus remote-writes
+    # its platform-labelled series - the same backend Grafana reads
+    # (OBSERVABILLITY_PART9.md). Never the public mimir.gerodimos.dev, which
+    # only accepts writes.
+    prometheusUrl: http://mimir-query-frontend.mimir.svc.cluster.local:8080/prometheus
+    tenant: platform
   # Public URL. Must match what the browser actually uses: the guest-auth
   # popup handshake validates against app.baseUrl, so a port-forward
   # (http://localhost:7007) no longer signs in once this is set - use the
