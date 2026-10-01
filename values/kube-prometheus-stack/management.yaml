@@ -174,7 +174,10 @@ values: |
     sidecar:
       # Alertmanager is disabled above; don't provision a datasource for it.
       datasources:
-        timeout: 30
+        # The chart's own datasource can't carry the X-Scope-OrgID header
+        # value (no secureJsonData), so it's replaced by the one below,
+        # under the same name and uid.
+        defaultDatasourceEnabled: false
         alertmanager:
           enabled: false
       # With the stock dashboards off, everything the sidecar loads is a
@@ -183,6 +186,30 @@ values: |
       dashboards:
         provider:
           folder: Platform
+    # Grafana reads every environment from Mimir (in-cluster query-frontend,
+    # tenant "platform"), not this cluster's Prometheus. Same name/uid as the
+    # chart's former default, so dashboards referencing uid "prometheus"
+    # are unchanged. Mimir only holds platform-labelled series (see the
+    # remoteWrite filter above); raw Kubernetes metrics stay in each
+    # cluster's Prometheus and aren't reachable from this Grafana.
+    additionalDataSources:
+      - name: Prometheus
+        type: prometheus
+        uid: prometheus
+        url: http://mimir-query-frontend.mimir.svc.cluster.local:8080/prometheus
+        access: proxy
+        isDefault: true
+        jsonData:
+          prometheusType: Mimir
+          httpMethod: POST
+          # Scrape interval, so $__rate_interval stays what it was.
+          timeInterval: 30s
+          timeout: 30
+          httpHeaderName1: X-Scope-OrgID
+        # A tenant id, not a credential; secureJsonData only because that's
+        # where Grafana takes custom header values from.
+        secureJsonData:
+          httpHeaderValue1: platform
     # Admin credentials come from the ExternalSecret below, not the chart:
     # the chart's own random password would be regenerated on every Argo CD
     # render (Argo CD doesn't support Helm lookup).
