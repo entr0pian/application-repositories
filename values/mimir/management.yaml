@@ -5,9 +5,11 @@ values: |
   # storage. Everything lives in emptyDirs: a restart of the ingester loses
   # all metrics, by design (see platform-architecture OBSERVABILLITY_PART6.md).
   #
-  # Internal only. Writes: mimir-distributor:8080/api/v1/push. Reads:
-  # mimir-query-frontend:8080/prometheus/api/v1/... Both require
-  # X-Scope-OrgID (multitenancy stays on; the one tenant is "platform").
+  # Writes: publicly via the gateway below (Basic Auth, tenant pinned), or
+  # in-cluster at mimir-distributor:8080/api/v1/push. Reads: in-cluster only,
+  # mimir-query-frontend:8080/prometheus/api/v1/... In-cluster callers send
+  # X-Scope-OrgID themselves (multitenancy stays on; the one tenant is
+  # "platform").
   fullnameOverride: mimir
 
   mimir:
@@ -71,9 +73,121 @@ values: |
     enabled: false
   overrides_exporter:
     enabled: false
-  # 6c puts its own NGINX in front of the distributor.
+  # Public remote-write entry point: https://mimir.gerodimos.dev/api/v1/push.
+  # The chart's NGINX gateway with our own nginx.conf: its default config
+  # forwards the client's X-Scope-OrgID and exposes queries, rules and
+  # alertmanager. Ours exposes only authenticated POST /api/v1/push (plus an
+  # unauthenticated /ready for probes) and pins the tenant to "platform".
+  # Basic Auth users are the remote-write writers; their bcrypt hashes come
+  # from the mimir-htpasswd ExternalSecret below. NGINX re-reads that file on
+  # every request, so rotating a writer needs no restart.
   gateway:
-    enabled: false
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
+    nginx:
+      basicAuth:
+        enabled: true
+        existingSecret: mimir-htpasswd
+      config:
+        # Mounted by the chart at /etc/nginx/nginx.conf; the Deployment rolls
+        # on any change (checksum/config). Must keep the chart's contract:
+        # listen 8080, /ready, htpasswd at /etc/nginx/secrets/.htpasswd,
+        # writable paths under /tmp (unprivileged image).
+        file: |
+          worker_processes  2;
+          error_log  /dev/stderr error;
+          pid        /tmp/nginx.pid;
+
+          events {
+            worker_connections  1024;
+          }
+
+          http {
+            client_body_temp_path /tmp/client_temp;
+            proxy_temp_path       /tmp/proxy_temp_path;
+            fastcgi_temp_path     /tmp/fastcgi_temp;
+            uwsgi_temp_path       /tmp/uwsgi_temp;
+            scgi_temp_path        /tmp/scgi_temp;
+            default_type application/octet-stream;
+
+            # Log only non-2xx/3xx, and never the Authorization header.
+            log_format main '$remote_addr - $remote_user [$time_local] $status '
+                            '"$request" $body_bytes_sent "$http_x_forwarded_for"';
+            map $status $loggable {
+              ~^[23]  0;
+              default 1;
+            }
+            access_log /dev/stderr main if=$loggable;
+
+            sendfile           on;
+            proxy_http_version 1.1;
+            proxy_read_timeout 60;
+            # Variables in proxy_pass are resolved at request time.
+            resolver kube-dns.kube-system.svc.cluster.local;
+            # Snappy-compressed remote-write batches are small.
+            client_max_body_size 10m;
+
+            server {
+              listen 8080;
+
+              # Probes and the ALB health check, no auth, no Mimir behind it.
+              location = /ready {
+                auth_basic off;
+                return 200 'OK';
+              }
+
+              location = /api/v1/push {
+                limit_except POST {
+                  deny all;
+                }
+                auth_basic           "Mimir remote write";
+                auth_basic_user_file /etc/nginx/secrets/.htpasswd;
+
+                # Tenant is decided here, never by the client: this replaces
+                # any X-Scope-OrgID the client sent. Credentials stop here.
+                proxy_set_header X-Scope-OrgID     "platform";
+                proxy_set_header Authorization     "";
+                proxy_set_header Host              $host;
+                proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+
+                set $distributor mimir-distributor.mimir.svc.cluster.local;
+                proxy_pass http://$distributor:8080$request_uri;
+              }
+
+              # Nothing else of Mimir is public.
+              location / {
+                return 404;
+              }
+            }
+          }
+    # Same ALB settings as Grafana's, Argo CD's and Backstage's Ingresses: the
+    # shared "platform" group puts all four behind one ALB, and the
+    # *.gerodimos.dev ACM certificate is discovered from the host. No tls
+    # block (TLS ends at the ALB). external-dns publishes the record.
+    ingress:
+      enabled: true
+      ingressClassName: alb
+      annotations:
+        alb.ingress.kubernetes.io/scheme: internet-facing
+        alb.ingress.kubernetes.io/target-type: ip
+        alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+        alb.ingress.kubernetes.io/ssl-redirect: "443"
+        alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+        alb.ingress.kubernetes.io/group.name: platform
+        alb.ingress.kubernetes.io/healthcheck-path: /ready
+      hosts:
+        - host: mimir.gerodimos.dev
+          paths:
+            - path: /
+              pathType: Prefix
+      tls: []
   # Both only work on bucket blocks, and there is no bucket (see
   # blocks_storage above).
   store_gateway:
