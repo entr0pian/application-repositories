@@ -1,0 +1,11 @@
+name: mimir-management
+repoURL: https://grafana.github.io/helm-charts
+chart: mimir-distributed
+chartPath: ""
+targetRevision: "6.2.0"
+namespace: mimir
+createNamespace: true
+serverSideApply: false
+wave: "1"
+notify: false
+values: ""

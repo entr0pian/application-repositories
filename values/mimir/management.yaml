@@ -1,0 +1,130 @@
+name: mimir-management
+values: |
+  # Minimal Mimir: classic architecture (distributor pushes straight to the
+  # ingester, no Kafka), one replica of each read/write component, no object
+  # storage. Everything lives in emptyDirs: a restart of the ingester loses
+  # all metrics, by design (see platform-architecture OBSERVABILLITY_PART6.md).
+  #
+  # Internal only. Writes: mimir-distributor:8080/api/v1/push. Reads:
+  # mimir-query-frontend:8080/prometheus/api/v1/... Both require
+  # X-Scope-OrgID (multitenancy stays on; the one tenant is "platform").
+  fullnameOverride: mimir
+
+  mimir:
+    structuredConfig:
+      # Classic architecture (supported in Mimir 3.x; ingest storage + Kafka
+      # is the chart default since 6.0).
+      ingest_storage:
+        enabled: false
+        kafka:
+          address: null
+          topic: null
+          auto_create_topic_default_partitions: null
+      distributor:
+        remote_timeout: null
+      ingester:
+        push_grpc_method_enabled: true
+        ring:
+          replication_factor: 1
+      # No bucket. The ingester never ships blocks (ship_interval 0) and keeps
+      # them locally for retention_period; queriers ask it for the whole
+      # window. With no bucket index, queriers treat long-term storage as
+      # empty, so no store-gateway or compactor is needed.
+      blocks_storage:
+        backend: filesystem
+        filesystem:
+          dir: /data/blocks
+        tsdb:
+          ship_interval: 0s
+          retention_period: 49h
+      querier:
+        query_ingesters_within: 48h
+      # No query-scheduler: the querier pulls work straight from the
+      # frontend (the chart wires both to the scheduler unconditionally).
+      frontend:
+        scheduler_address: ""
+      frontend_worker:
+        scheduler_address: ""
+        frontend_address: mimir-query-frontend.mimir.svc:9095
+      # Stores for components that are disabled below; filesystem keeps the
+      # config valid without the chart's MinIO.
+      ruler_storage:
+        backend: filesystem
+        filesystem:
+          dir: /data/ruler
+      alertmanager_storage:
+        backend: filesystem
+        filesystem:
+          dir: /data/alertmanager
+
+  # Chart 6.x defaults that this setup doesn't use.
+  kafka:
+    enabled: false
+  minio:
+    enabled: false
+  rollout_operator:
+    enabled: false
+  chunks-cache:
+    enabled: false
+  index-cache:
+    enabled: false
+  metadata-cache:
+    enabled: false
+  results-cache:
+    enabled: false
+  alertmanager:
+    enabled: false
+  ruler:
+    enabled: false
+  overrides_exporter:
+    enabled: false
+  query_scheduler:
+    enabled: false
+  # 6c puts its own NGINX in front of the distributor.
+  gateway:
+    enabled: false
+  # Both only work on bucket blocks, and there is no bucket (see
+  # blocks_storage above).
+  store_gateway:
+    enabled: false
+    zoneAwareReplication:
+      enabled: false
+  compactor:
+    enabled: false
+
+  distributor:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+  ingester:
+    replicas: 1
+    zoneAwareReplication:
+      enabled: false
+    persistentVolume:
+      enabled: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+  querier:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
+  query_frontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
