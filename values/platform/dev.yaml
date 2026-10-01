@@ -6,6 +6,12 @@ values: |
       auth: podIdentity
   limitRange:
     enabled: true
+  # Same platform.infrastructure recording rules as management, so dev
+  # produces the platform:* contract locally. No Grafana here: dashboards
+  # live on management.
+  observability:
+    recordingRules:
+      enabled: true
   grafanaDashboard:
     enabled: false
   crossplane:
