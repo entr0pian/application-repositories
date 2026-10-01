@@ -1,7 +1,7 @@
 name: mimir-management
 values: |
   # Minimal Mimir: classic architecture (distributor pushes straight to the
-  # ingester, no Kafka), one replica of each read/write component, no object
+  # ingester, no Kafka), one replica of each component Mimir 3.x requires, no object
   # storage. Everything lives in emptyDirs: a restart of the ingester loses
   # all metrics, by design (see platform-architecture OBSERVABILLITY_PART6.md).
   #
@@ -37,15 +37,8 @@ values: |
         tsdb:
           ship_interval: 0s
           retention_period: 49h
-      querier:
+      limits:
         query_ingesters_within: 48h
-      # No query-scheduler: the querier pulls work straight from the
-      # frontend (the chart wires both to the scheduler unconditionally).
-      frontend:
-        scheduler_address: ""
-      frontend_worker:
-        scheduler_address: ""
-        frontend_address: mimir-query-frontend.mimir.svc:9095
       # Stores for components that are disabled below; filesystem keeps the
       # config valid without the chart's MinIO.
       ruler_storage:
@@ -77,8 +70,6 @@ values: |
   ruler:
     enabled: false
   overrides_exporter:
-    enabled: false
-  query_scheduler:
     enabled: false
   # 6c puts its own NGINX in front of the distributor.
   gateway:
@@ -120,6 +111,15 @@ values: |
         memory: 64Mi
       limits:
         memory: 512Mi
+  # Mimir 3.x's query-frontend requires a query-scheduler.
+  query_scheduler:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
   query_frontend:
     replicas: 1
     resources:
