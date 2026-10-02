@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "1f29a03d96592c19b802fd69dace851ce8f54916"
+    tag: "47d1c96e4d7afcfac227152cc73fd025ac163f54"
     pullPolicy: Always
   github:
     # Same AWS Secrets Manager path used by helm-charts/platform's
