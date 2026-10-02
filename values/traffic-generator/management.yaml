@@ -11,3 +11,13 @@ values: |
           weight: 9
         - path: /does-not-exist
           weight: 1
+    - name: checkout
+      url: http://checkout.management.svc.cluster.local:8080
+      minRate: 1
+      maxRate: 10
+      spikeChance: 0.15
+      requests:
+        - path: /
+          weight: 9
+        - path: /does-not-exist
+          weight: 1
