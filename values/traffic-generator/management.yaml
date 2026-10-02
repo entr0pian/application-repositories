@@ -1,0 +1,13 @@
+name: traffic-generator-management
+values: |
+  targets:
+    - name: payments
+      url: http://payments.management.svc.cluster.local:8080
+      minRate: 1
+      maxRate: 20
+      spikeChance: 0.15
+      requests:
+        - path: /
+          weight: 9
+        - path: /does-not-exist
+          weight: 1
