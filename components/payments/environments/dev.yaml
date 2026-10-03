@@ -3,5 +3,5 @@ environment: dev
 namespace: dev
 source:
     repoURL: https://github.com/entr0pian/payments.git
-    targetRevision: 56bcae63d2d841a381b503a782a51ddec832bb1e
+    targetRevision: 6a4d1879aaaf56b7af7e45ca775470999f427f3a
     chartPath: chart
