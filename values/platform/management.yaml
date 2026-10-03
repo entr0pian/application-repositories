@@ -21,3 +21,9 @@ values: |
     secretPath: "taskapp/platform/argocd-write-token"
   crossplaneGithub:
     secretPath: "taskapp/platform/crossplane-github-token"
+  # Component namespace + ArgoCD's GitHub webhook secret (argocd/ and
+  # platform/), see platform-architecture/ARGOCD_WEBHOOK_IMPLEMENTATION.md
+  componentNamespace:
+    create: true
+  argocdGithubWebhook:
+    secretPath: "taskapp/platform/argocd-github-webhook"
