@@ -8,4 +8,4 @@ spec:
   componentRef:
     name: payments
   environment: management
-  version: "56bcae63d2d841a381b503a782a51ddec832bb1e"
+  version: "bb3fe34201380a053099a7a0bdb45b911f63fbe3"
