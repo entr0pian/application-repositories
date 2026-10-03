@@ -1,7 +1,0 @@
-component: checkout
-environment: dev
-namespace: dev
-source:
-    repoURL: https://github.com/entr0pian/checkout.git
-    targetRevision: 8c46f41f0e62b92c4de8e83ad6e6fcceca17f0f7
-    chartPath: chart
