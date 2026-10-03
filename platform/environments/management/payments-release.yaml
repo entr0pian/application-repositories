@@ -1,0 +1,11 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: Release
+metadata:
+  name: payments-management
+  labels:
+    platform.taskapp.io/component: payments
+spec:
+  componentRef:
+    name: payments
+  environment: management
+  version: "bb3fe34201380a053099a7a0bdb45b911f63fbe3"
