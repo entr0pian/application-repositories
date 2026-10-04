@@ -180,7 +180,31 @@ Neither reads a paired `values/` file — every field a `Release` or `Database` 
 
 This is also the intended landing zone for Backstage-driven automation: a developer's "create a component" / "enable a database" action in the UI opens a PR here (`registry/<name>.yaml` or `environments/<env>/<name>-db.yaml`) rather than writing anywhere else.
 
-**Not onboarded here:** `backend`, `frontend`, and `backend-operator` aren't currently onboarded — `backend` was removed from `catalog/` as part of the `components/` reshape below and not yet re-added (add `components/backend/{environments,values}/<env>.yaml` the same way as `payments` whenever it's needed again); `backend-operator` needs `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above. `payments`' (and eventually any other service's) CI still needs repointing to write `components/<service>/values/<env>.yaml`'s `image.tag` on every push — the old mechanism that did this was retired along with `crs/`, and nothing has replaced it yet (the `Release` API/controller — implemented and running, see `platform/` above — is meant to close this). Wiring CI to actually commit a `platform/environments/<env>/<service>-release.yaml` on every push, instead of a person doing it, is still open. Until that lands, `values/` is edited by hand like everything else here.
+**Not onboarded here:** `backend`, `frontend`, and `backend-operator` aren't currently onboarded — `backend` was removed from `catalog/` as part of the `components/` reshape below and not yet re-added (add `components/backend/{environments,values}/<env>.yaml` the same way as `payments` whenever it's needed again); `backend-operator` needs `infra/backend-operator/<env>.yaml` (+ a paired `values/` file if needed) the same way as `platform` above. Deploying every push no longer needs CI to write here: see **Auto-deploy** below.
+
+### Auto-deploy
+
+A `Release` can follow its component's `main` instead of a pinned version:
+
+```yaml
+# platform/environments/dev/orders-release.yaml
+apiVersion: platform.taskapp.io/v1alpha1
+kind: Release
+metadata:
+  name: orders-dev
+  labels:
+    platform.taskapp.io/component: orders
+spec:
+  componentRef:
+    name: orders
+  environment: dev
+  autoDeploy:
+    enabled: true   # instead of version: — exactly one of the two
+```
+
+`release-operator` polls the component repo's `ci.yaml` runs (every 60s by default) and, for each new successful push run on `main`, commits that run's commit SHA straight into `components/<component>/{environments,values}/dev.yaml` on `main` (image tag and chart revision), with no PR, as the `Release <name>: auto-deploy <component>/<env> <sha>` commits you'll see here. The `Release` file itself never changes: what was deployed is recorded in the CR's `status.autoDeploy`, since Argo CD applies this file and would revert the version if the operator wrote it into `spec`. It only ever moves forward to a newer run, and only in the environments the operator allows (`--auto-deploy-environments`, `dev` by default); a `Release` asking for it anywhere else is refused (`Ready=False, reason=AutoDeployNotAllowed`).
+
+Turn it on with Backstage's **Onboard Service** ("Set up auto deployment to dev") or **Create deployment** (Auto-deploy toggle); turn it off by pinning a `version:` again with Create deployment. See [`release-operator`'s `docs/AUTO_DEPLOY.md`](https://github.com/entr0pian/release-operator/blob/main/docs/AUTO_DEPLOY.md) for the design.
 
 ## To onboard
 
