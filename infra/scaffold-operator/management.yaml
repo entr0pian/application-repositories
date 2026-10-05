@@ -2,7 +2,7 @@ name: scaffold-operator-management
 repoURL: https://github.com/entr0pian/scaffold-operator.git
 chart: ""
 chartPath: chart
-targetRevision: main
+targetRevision: "b6e7e222329ed38e6ba59bd722070bd6a72f1df4"
 namespace: scaffold-operator-system
 createNamespace: true
 serverSideApply: true

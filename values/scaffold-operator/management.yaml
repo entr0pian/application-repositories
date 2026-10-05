@@ -3,5 +3,5 @@ values: |
   manager:
     image:
       repository: ghcr.io/entr0pian/scaffold-operator
-      tag: "10c230b652b9b3c497895db60783e264275137be"
+      tag: "b6e7e222329ed38e6ba59bd722070bd6a72f1df4"
       pullPolicy: Always
