@@ -11,6 +11,12 @@ values: |
     # backstage namespace too since Secrets don't mount cross-namespace.
     secretPath: "taskapp/platform/crossplane-github-token"
     clusterSecretStoreName: aws-secrets-manager
+  githubApp:
+    # taskapp-platform-portal GitHub App (bootstrap-cluster/terraform/
+    # management-eks portal_github_app). Charts that know it use it instead
+    # of the github PAT above, which is then no longer synced here.
+    secretPath: "taskapp/platform/portal-github-app"
+    clusterSecretStoreName: aws-secrets-manager
   argocd:
     # Read-only "backstage" ArgoCD API account (bootstrap-cluster/install-argocd
     # values.yaml's accounts.backstage/policy.csv) — see BACKSTAGE_PART5.md.
