@@ -8,6 +8,6 @@ spec:
   componentRef:
     name: checkout
   environment: dev
-  version: "cbe206beef410731a2696ddf898ec8b8e6c6556e"
+  version: "d810054e51d469fe0814fd022da37c2620bd534f"
   autoDeploy:
     branch: main
