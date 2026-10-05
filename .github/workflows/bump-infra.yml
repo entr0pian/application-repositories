@@ -1,0 +1,156 @@
+name: Bump infra component
+
+# Reusable workflow: an infra repo's CI calls it after a green build on main
+# to deploy that commit. It pins both the chart (infra/<c>/<env>.yaml
+# targetRevision) and the image (values/<c>/<env>.yaml tag) to the one SHA,
+# and commits straight to main as taskapp-platform-deployer[bot].
+# See platform-architecture/AUTO_DEPLOY.md (Infra components).
+#
+# Credentials: no GitHub secrets. The caller's OIDC token assumes
+# taskapp-infra-deployer (bootstrap-cluster/terraform/github-actions-oidc),
+# which trusts only this file on main, called from an infra repo's main, and
+# may only read the App key from Secrets Manager.
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: Directory under infra/ and values/, e.g. backstage
+        type: string
+        required: true
+      sha:
+        description: Full commit SHA to deploy; its image must already be pushed
+        type: string
+        required: true
+      environment:
+        description: File name under infra/<component>/ and values/<component>/
+        type: string
+        default: management
+
+jobs:
+  bump:
+    name: Bump ${{ inputs.component }} in ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    # Scoped to the caller's repo, so this serialises one component's bumps;
+    # a newer pending run replaces an older pending one. Bumps of different
+    # components race only on the push, handled by the rebase retry below.
+    concurrency:
+      group: bump-infra-${{ inputs.component }}-${{ inputs.environment }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      COMPONENT: ${{ inputs.component }}
+      SHA: ${{ inputs.sha }}
+      ENVIRONMENT: ${{ inputs.environment }}
+      # The calling infra repo, where SHA lives.
+      SOURCE_REPO: ${{ github.repository }}
+    steps:
+      - name: Check inputs
+        run: |
+          [[ "$COMPONENT" =~ ^[a-z0-9-]+$ ]] || { echo "::error::bad component '$COMPONENT'"; exit 1; }
+          [[ "$ENVIRONMENT" =~ ^[a-z0-9-]+$ ]] || { echo "::error::bad environment '$ENVIRONMENT'"; exit 1; }
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::sha must be a full 40-char commit SHA"; exit 1; }
+
+      # Logs the claims the role's trust policy matches on (never the token),
+      # so an AccessDenied below can be compared against
+      # `terraform output oidc_subjects` in github-actions-oidc.
+      - name: Show OIDC subject
+        run: |
+          curl -fsS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" \
+            | python3 -c '
+          import base64, json, sys
+          payload = json.load(sys.stdin)["value"].split(".")[1]
+          claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+          print("sub:", claims["sub"])
+          print("job_workflow_ref:", claims.get("job_workflow_ref"))
+          '
+
+      - name: Assume taskapp-infra-deployer
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::425832464758:role/taskapp-infra-deployer
+          role-session-name: bump-${{ inputs.component }}
+          aws-region: eu-west-1
+
+      - name: Read GitHub App credentials
+        uses: aws-actions/aws-secretsmanager-get-secrets@2297f9a879480a9e3af9b293ed15c70caf8e1c88 # v3.0.2
+        with:
+          secret-ids: DEPLOYER,taskapp/platform/github-app
+          parse-json-secrets: true
+
+      - name: Mint App token for application-repositories
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ env.DEPLOYER_APPID }}
+          private-key: ${{ env.DEPLOYER_PRIVATEKEY }}
+          owner: entr0pian
+          repositories: application-repositories
+          permission-contents: write
+
+      - name: Drop the App key from the environment
+        run: |
+          {
+            echo "DEPLOYER_PRIVATEKEY="
+            echo "DEPLOYER_APPID="
+            echo "DEPLOYER_INSTALLATIONID="
+          } >> "$GITHUB_ENV"
+
+      - name: Check out application-repositories
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: entr0pian/application-repositories
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Bump chart and image
+        env:
+          # The caller's token: enough to compare commits in its own repo.
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          infra="infra/$COMPONENT/$ENVIRONMENT.yaml"
+          values="values/$COMPONENT/$ENVIRONMENT.yaml"
+
+          # Never create: a component that isn't onboarded (or was removed,
+          # e.g. before a teardown) stays that way.
+          for f in "$infra" "$values"; do
+            [ -f "$f" ] || { echo "::notice::$f not found, nothing to deploy"; exit 0; }
+          done
+          [ "$(grep -cE '^targetRevision:' "$infra")" = 1 ] || { echo "::error::expected one targetRevision in $infra"; exit 1; }
+          [ "$(grep -cE '^\s+tag:' "$values")" = 1 ] || { echo "::error::expected one image tag in $values"; exit 1; }
+
+          # Forward-only: only move to a commit that comes after the deployed
+          # one, so a slow older run finishing last can't downgrade. A branch
+          # name (the pre-pinning `main`) is replaced unconditionally.
+          current=$(sed -nE 's/^targetRevision:[[:space:]]*"?([^"[:space:]]+)"?.*/\1/p' "$infra")
+          if [[ "$current" =~ ^[0-9a-f]{40}$ ]]; then
+            status=$(gh api "repos/$SOURCE_REPO/compare/$current...$SHA" --jq .status)
+            case "$status" in
+              ahead) ;;
+              identical) echo "::notice::$COMPONENT already at ${SHA::7} in $ENVIRONMENT"; exit 0 ;;
+              *) echo "::notice::${SHA::7} is not ahead of deployed ${current::7} ($status), not deploying"; exit 0 ;;
+            esac
+          fi
+
+          sed -i -E "s/^targetRevision:.*/targetRevision: \"$SHA\"/" "$infra"
+          sed -i -E "s/^(\s+tag:).*/\1 \"$SHA\"/" "$values"
+          if git diff --quiet; then
+            echo "::notice::nothing changed"; exit 0
+          fi
+          git diff
+
+          git config user.name "taskapp-platform-deployer[bot]"
+          git config user.email "338031389+taskapp-platform-deployer[bot]@users.noreply.github.com"
+          git commit -qam "Auto-deploy $COMPONENT ${SHA::7} to $ENVIRONMENT"
+
+          for attempt in 1 2 3; do
+            git push origin HEAD:main && exit 0
+            echo "push rejected (attempt $attempt), rebasing"
+            git pull -q --rebase origin main
+          done
+          echo "::error::could not push after 3 attempts"
+          exit 1
