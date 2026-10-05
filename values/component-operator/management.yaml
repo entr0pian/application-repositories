@@ -3,5 +3,5 @@ values: |
   manager:
     image:
       repository: ghcr.io/entr0pian/component-operator
-      tag: "4bb852f9b4692ce4a4a0717dec5c7ffcbaaed265"
+      tag: "009ecc17cccfc6dfd89bbe16ea632c3f1a9d3074"
       pullPolicy: Always
