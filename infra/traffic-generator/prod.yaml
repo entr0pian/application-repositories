@@ -1,0 +1,11 @@
+name: traffic-generator-prod
+repoURL: https://github.com/entr0pian/helm-charts.git
+chart: ""
+chartPath: traffic-generator
+targetRevision: main
+namespace: traffic-generator
+createNamespace: true
+serverSideApply: false
+wave: "5"
+notify: false
+values: ""

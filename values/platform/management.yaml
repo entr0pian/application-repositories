@@ -8,6 +8,7 @@ values: |
   # external-secret-registered-clusters.yaml)
   registeredClusters:
     - dev
+    - prod
   limitRange:
     enabled: false
   observability:

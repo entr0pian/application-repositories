@@ -1,0 +1,28 @@
+name: external-dns-prod
+values: |
+  # Publishes prod's Ingress hosts (<component>.prod.gerodimos.dev) as Route53
+  # aliases to prod's ALB. AWS permissions come from EKS Pod Identity -
+  # bootstrap-cluster/terraform/modules/eks-cluster's external-dns.tf binds
+  # its role (write access to the gerodimos.dev zone) to
+  # external-dns/<serviceAccount.name>.
+  provider:
+    name: aws
+  serviceAccount:
+    name: external-dns
+  sources:
+    - ingress
+  # sync: also deletes records whose Ingress is gone - but only records this
+  # instance owns (TXT registry below).
+  policy: sync
+  # Stable across the daily cluster recreate, so a new prod cluster adopts
+  # yesterday's records and repoints them at its own ALB.
+  txtOwnerId: taskapp-prod
+  # Fenced to prod's own subdomain; management's external-dns excludes it.
+  domainFilters:
+    - prod.gerodimos.dev
+  extraArgs:
+    - --aws-zone-type=public
+    # The hosted zone is gerodimos.dev, which a prod.gerodimos.dev filter
+    # doesn't select on its own: without this, external-dns finds "no hosted
+    # zone matching" and publishes nothing.
+    - --aws-zone-match-parent

@@ -1,0 +1,5 @@
+name: traffic-generator-prod
+values: |
+  # No components to target. With an empty list the chart renders no
+  # Deployment; add a target per onboarded component to resume traffic.
+  targets: []

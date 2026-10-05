@@ -1,12 +1,25 @@
 name: platform-prod
 values: |
+  clusterSecretStore:
+    aws:
+      # ESO authenticates via EKS Pod Identity, no static key
+      auth: podIdentity
   limitRange:
     enabled: true
+  # Same platform.infrastructure recording rules as management, so prod
+  # produces the platform:* contract locally. No Grafana here: dashboards
+  # live on management.
+  observability:
+    recordingRules:
+      enabled: true
   grafanaDashboard:
-    enabled: true
+    enabled: false
   crossplane:
     secretPath: ""
   argocdWriteToken:
     secretPath: ""
   crossplaneGithub:
     secretPath: ""
+  # Read-only RBAC for management's Backstage (Deployments tab Logs/Details).
+  backstageReader:
+    enabled: true
