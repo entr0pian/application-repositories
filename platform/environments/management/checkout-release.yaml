@@ -1,0 +1,11 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: Release
+metadata:
+  name: checkout-management
+  labels:
+    platform.taskapp.io/component: checkout
+spec:
+  componentRef:
+    name: checkout
+  environment: management
+  version: "cbe206beef410731a2696ddf898ec8b8e6c6556e"
