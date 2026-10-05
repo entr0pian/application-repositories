@@ -54,7 +54,7 @@ values: |
       # emptyDir TSDB, same reasoning as management: no EBS CSI driver,
       # cluster is ephemeral.
       retention: 2d
-      retentionSize: 4GB
+      retentionSize: 2GB
       # Ship platform metrics to Mimir on management, exactly like
       # management's Prometheus: only series with both component and
       # environment (platform components + platform:* rules); raw Kubernetes
@@ -74,12 +74,15 @@ values: |
             - sourceLabels: [component, environment]
               regex: ".+;.+"
               action: keep
+      # dev runs on one t3a.medium (4Gi): a limit above the node's free
+      # memory would turn a Prometheus spike into node memory pressure
+      # instead of an OOM-kill of Prometheus alone.
       resources:
         requests:
           cpu: 200m
           memory: 512Mi
         limits:
-          memory: 2Gi
+          memory: 1Gi
 
   prometheusOperator:
     resources:
