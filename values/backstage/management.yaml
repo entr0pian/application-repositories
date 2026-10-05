@@ -4,17 +4,10 @@ values: |
     repository: ghcr.io/entr0pian/backstage
     tag: "2872ed869a181a3e077513602c8a8ca786d20bdc"
     pullPolicy: Always
-  github:
-    # Same AWS Secrets Manager path used by helm-charts/platform's
-    # crossplane-github-credentials ExternalSecret and consumed by
-    # component-operator/scaffold-operator — same PAT, synced into the
-    # backstage namespace too since Secrets don't mount cross-namespace.
-    secretPath: "taskapp/platform/crossplane-github-token"
-    clusterSecretStoreName: aws-secrets-manager
   githubApp:
     # taskapp-platform-portal GitHub App (bootstrap-cluster/terraform/
-    # management-eks portal_github_app). Charts that know it use it instead
-    # of the github PAT above, which is then no longer synced here.
+    # management-eks portal_github_app): Backstage's only GitHub identity.
+    # PRs are opened by taskapp-platform-portal[bot]; no PAT is used here.
     secretPath: "taskapp/platform/portal-github-app"
     clusterSecretStoreName: aws-secrets-manager
   argocd:
