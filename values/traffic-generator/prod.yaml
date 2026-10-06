@@ -1,5 +1,23 @@
 name: traffic-generator-prod
 values: |
-  # No components to target. With an empty list the chart renders no
-  # Deployment; add a target per onboarded component to resume traffic.
-  targets: []
+  targets:
+    - name: payments
+      url: http://payments.prod.svc.cluster.local:8080
+      minRate: 1
+      maxRate: 20
+      spikeChance: 0.15
+      requests:
+        - path: /
+          weight: 9
+        - path: /does-not-exist
+          weight: 1
+    - name: checkout
+      url: http://checkout.prod.svc.cluster.local:8080
+      minRate: 1
+      maxRate: 10
+      spikeChance: 0.15
+      requests:
+        - path: /
+          weight: 9
+        - path: /does-not-exist
+          weight: 1
