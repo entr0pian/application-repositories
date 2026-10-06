@@ -2,7 +2,7 @@ name: release-operator-management
 repoURL: https://github.com/entr0pian/release-operator.git
 chart: ""
 chartPath: chart
-targetRevision: "1c2e27b6f2c5698a7a4e8cb7f53dfc7413268fb5"
+targetRevision: "064a41d2d1098d85ec229ec4f478404bc8451542"
 namespace: release-operator-system
 createNamespace: true
 serverSideApply: true
