@@ -1,7 +1,0 @@
-component: payments
-environment: dev
-namespace: dev
-source:
-    repoURL: https://github.com/entr0pian/payments.git
-    targetRevision: fdd2628c467db57c63036556416a6af7087bb519
-    chartPath: chart
