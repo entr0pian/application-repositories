@@ -19,13 +19,13 @@ deployment step.
 flowchart LR
     BS["Backstage<br/>golden paths"] -->|PR| PL
     subgraph AR["application-repositories"]
-        PL["platform/<br/>Component · Release · Database"]
-        CO["components/<br/>services"]
+        PL["platform/<br/>Component · Release · Database · DatabaseSchema"]
+        CO["components/<br/>services + their schemas"]
         IN["infra/ + values/<br/>cluster infrastructure"]
         PK["packages/<br/>Crossplane packages"]
     end
     PL -->|Argo CD| MG["management<br/>operators + Crossplane"]
-    MG -->|"release-operator commits"| CO
+    MG -->|"release-operator, schema-operator commit"| CO
     CI["infra repos' CI<br/>bump-infra"] -->|commit| IN
     CO -->|Argo CD| WL["dev · prod"]
     IN -->|Argo CD| ALL["every cluster"]
@@ -37,8 +37,8 @@ Each top-level directory is read by one ApplicationSet in
 
 | Directory | ApplicationSet | Holds |
 |---|---|---|
-| `platform/` | `taskapp-platform` | `Component`, `Release` and `Database` resources, applied as-is to `management` |
-| `components/` | `taskapp-catalog` | Where each service's chart comes from, and its values, per environment |
+| `platform/` | `taskapp-platform` | `Component`, `Release`, `Database` and `DatabaseSchema` resources, applied as-is to `management` |
+| `components/` | `taskapp-catalog`, `taskapp-schemas` | Where each service's chart comes from, and its values, per environment (`environments/`, `values/`); which schema package each environment's database gets (`schema/`) |
 | `infra/` + `values/` | `taskapp-infra` | Cluster infrastructure: ingress, DNS, certificates, External Secrets, Prometheus, Mimir, Crossplane, Backstage, the operators… |
 | `packages/` | `taskapp-packages` | Which version of a Crossplane package runs in each environment |
 
@@ -96,18 +96,52 @@ A `Database` in `platform/environments/<env>/` provisions RDS through
 A `Release` that binds it adds the credentials' Secrets Manager path to the
 values file, never the credentials themselves.
 
+The database's schema is released on its own, separately from the code. A
+`DatabaseSchema` in the same directory names the commit of the service's
+repository whose `migrations/` the database should have:
+
+```yaml
+# platform/environments/dev/payments-db-schema.yaml
+apiVersion: platform.taskapp.io/v1alpha1
+kind: DatabaseSchema
+metadata:
+  name: payments-db
+  namespace: dev
+spec:
+  componentRef: {name: payments}
+  version: 3f9c2e1…        # full commit SHA
+```
+
+Once the service's CI has published that commit's schema package,
+[schema-operator](https://github.com/entr0pian/schema-operator) writes the
+pointer, and `taskapp-schemas` deploys the package, whose `AtlasMigration`
+applies the new migrations:
+
+```yaml
+# components/payments/schema/dev.yaml
+chart: schema
+commit: 3f9c2e1…
+component: payments
+database: {name: payments-db, remoteRef: /bindings/dev/databases/payments-db}
+environment: dev
+namespace: dev
+repoURL: ghcr.io/entr0pian/payments
+version: 0.0.0-g3f9c2e1…
+```
+
 ## Who writes what
 
 | Files | Written by | How |
 |---|---|---|
 | `platform/registry/`, `platform/environments/` | People, through Backstage templates | Pull request opened by the portal's GitHub App, reviewed and merged by a person |
 | `Release` `version` (auto-deploy, dev only) | release-operator | Direct commit, forward only, never over a concurrent human change |
-| `components/` | release-operator only | Derived from the `Release`. Nobody edits these by hand |
+| `components/<c>/environments/`, `values/` | release-operator only | Derived from the `Release`. Nobody edits these by hand |
+| `components/<c>/schema/` | schema-operator only | Derived from the `DatabaseSchema`. Nobody edits these by hand |
 | `infra/<c>/<env>.yaml` `targetRevision` + `values/<c>/<env>.yaml` image tag | The component's own CI, via `bump-infra.yml` | Direct commit as `taskapp-platform-deployer[bot]` after a green build on `main` |
 | Everything else in `infra/`, `values/`, `packages/` | People | Pull request |
 
 `.github/workflows/bump-infra.yml` is a reusable workflow. The platform's own
-components (the three operators and Backstage) call it after a green build, so
+components (the four operators and Backstage) call it after a green build, so
 the platform ships through the same GitOps path it gives services. It needs no
 stored secret: the caller's GitHub OIDC token assumes an AWS role that can read
 only the GitHub App key, and only when called from an infra repo's `main`.
