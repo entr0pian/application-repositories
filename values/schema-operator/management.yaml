@@ -3,5 +3,5 @@ values: |
   manager:
     image:
       repository: ghcr.io/entr0pian/schema-operator
-      tag: "66cbccc27dba7348f5e89ba7539b05bef06a4661"
+      tag: "12c347e4bf61aa5a683df30a1ce03314f742908e"
       pullPolicy: Always
