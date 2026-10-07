@@ -105,7 +105,7 @@ repository whose `migrations/` the database should have:
 apiVersion: platform.taskapp.io/v1alpha1
 kind: DatabaseSchema
 metadata:
-  name: payments-db
+  name: payments
   namespace: dev
 spec:
   componentRef: {name: payments}
