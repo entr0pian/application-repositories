@@ -1,0 +1,11 @@
+name: schema-operator-management
+repoURL: https://github.com/entr0pian/schema-operator.git
+chart: ""
+chartPath: chart
+targetRevision: "66cbccc27dba7348f5e89ba7539b05bef06a4661"
+namespace: schema-operator-system
+createNamespace: true
+serverSideApply: true
+wave: "3"
+notify: true
+values: ""

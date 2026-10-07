@@ -1,0 +1,7 @@
+name: schema-operator-management
+values: |
+  manager:
+    image:
+      repository: ghcr.io/entr0pian/schema-operator
+      tag: "66cbccc27dba7348f5e89ba7539b05bef06a4661"
+      pullPolicy: Always
