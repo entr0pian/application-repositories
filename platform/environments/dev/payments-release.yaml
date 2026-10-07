@@ -8,6 +8,9 @@ spec:
   componentRef:
     name: payments
   environment: dev
-  version: "9f48bf49efe8dec2d6c7cd83f85815f6f9223aec"
   autoDeploy:
     branch: main
+  bindings:
+    database:
+      enabled: true
+      ref: payments-db
