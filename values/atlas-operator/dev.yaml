@@ -1,0 +1,15 @@
+name: atlas-operator-dev
+values: |
+  # Applies AtlasMigration resources (database schemas). Each one is rendered by
+  # the platform's database-schema chart from a DatabaseSchema on management.
+  #
+  # Scale Atlas's throwaway dev database (the Postgres it replays pending
+  # migrations on before applying them) back to zero once a migration is Ready,
+  # instead of keeping one running per AtlasMigration.
+  prewarmDevDB: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
