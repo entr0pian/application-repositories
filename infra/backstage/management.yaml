@@ -2,7 +2,7 @@ name: backstage-management
 repoURL: https://github.com/entr0pian/backstage.git
 chart: ""
 chartPath: chart
-targetRevision: "b43e966dec87b638302fe6def45508cb39746dfd"
+targetRevision: "7e71bd6df102eace8a3c9a7d3f591471f11723c9"
 namespace: backstage
 createNamespace: true
 serverSideApply: true
