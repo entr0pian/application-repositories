@@ -2,7 +2,7 @@ name: component-operator-management
 repoURL: https://github.com/entr0pian/component-operator.git
 chart: ""
 chartPath: chart
-targetRevision: "009ecc17cccfc6dfd89bbe16ea632c3f1a9d3074"
+targetRevision: "1b173a033965e4b1283675bd393abcf3f3ba29aa"
 namespace: component-operator-system
 createNamespace: true
 serverSideApply: true
