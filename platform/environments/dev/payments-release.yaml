@@ -11,3 +11,7 @@ spec:
   version: "54f3f80a9a9e8b3dfe78bd95fad3cd0a0f6d14e4"
   autoDeploy:
     branch: main
+  bindings:
+    database:
+      enabled: true
+      ref: payments-db
