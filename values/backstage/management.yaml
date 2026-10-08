@@ -2,7 +2,7 @@ name: backstage-management
 values: |
   image:
     repository: ghcr.io/entr0pian/backstage
-    tag: "0d2d474fbd8fa69610bef9c06111ed7eeea7e456"
+    tag: "56e463656ffeb693483497bbe7ff83b5bf021bc1"
     pullPolicy: Always
   githubApp:
     # taskapp-platform-portal GitHub App (bootstrap-cluster/terraform/
