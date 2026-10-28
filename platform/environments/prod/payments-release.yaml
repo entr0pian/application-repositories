@@ -9,3 +9,7 @@ spec:
     name: payments
   environment: prod
   version: "a8487003d19493475329a83f0e201eabda9d6ef3"
+  bindings:
+    database:
+      enabled: true
+      ref: payments-db
