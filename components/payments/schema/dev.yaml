@@ -1,0 +1,12 @@
+# Written by schema-operator from a DatabaseSchema. Don't edit by hand:
+# change the DatabaseSchema in platform/environments/ instead.
+chart: schema
+commit: a8487003d19493475329a83f0e201eabda9d6ef3
+component: payments
+database:
+  name: payments-db
+  remoteRef: /bindings/dev/databases/payments-db
+environment: dev
+namespace: dev
+repoURL: ghcr.io/entr0pian/payments
+version: 0.0.0-ga8487003d19493475329a83f0e201eabda9d6ef3
