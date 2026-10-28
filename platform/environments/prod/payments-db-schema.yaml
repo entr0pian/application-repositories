@@ -1,0 +1,10 @@
+apiVersion: platform.taskapp.io/v1alpha1
+kind: DatabaseSchema
+metadata:
+  name: payments
+  labels:
+    platform.taskapp.io/component: payments
+spec:
+  componentRef:
+    name: payments
+  version: "a8487003d19493475329a83f0e201eabda9d6ef3"
