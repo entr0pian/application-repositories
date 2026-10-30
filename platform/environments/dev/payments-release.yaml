@@ -8,6 +8,6 @@ spec:
   componentRef:
     name: payments
   environment: dev
-  version: "a6aec7088c0b467c551df19d6f8ab38169c88e79"
+  version: "8cf9b0e58ca065c22d8becd08f8e7c0f8fde8ad8"
   autoDeploy:
     branch: main
